@@ -11,7 +11,6 @@ type parkingPlaceCoordinateType = {
 
 type parkingPlaceType = {
   coordinates: parkingPlaceCoordinateType;
-  finished: boolean;
   meta: parkingPlaceMetaData;
 };
 
