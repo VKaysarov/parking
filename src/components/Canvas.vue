@@ -59,7 +59,6 @@ export default defineComponent({
           y,
           positionNumber: 0,
         },
-        finished: false,
         meta: {
           placeNumber: 0,
           forDisabledDrive: false,
@@ -102,7 +101,6 @@ export default defineComponent({
           this.selectedPointPos.x > this.points[indexFoundPoint].coordinates.x - 4 &&
           this.selectedPointPos.x < this.points[indexFoundPoint].coordinates.x + 4
         ) {
-          this.points[indexFoundPoint].finished = true;
           this.indexStartPoint = indexFoundPoint
           this.$store.dispatch("startDraw");
           return "selescete";
@@ -295,11 +293,7 @@ export default defineComponent({
         for (let i = 1; i < this.points.length; i++) {
           // const start = this.points[i - 1].coordinates;
           const end = this.points[i].coordinates;
-          if (this.points[i].finished) {
-            ctx.fillStyle = "yellow";
-          } else {
-            ctx.fillStyle = "green";
-          }
+          ctx.fillStyle = "green";
           // ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
           ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
           // this.drawLine(ctx, start.x, start.y, end.x, end.y);
