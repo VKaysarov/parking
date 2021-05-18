@@ -1,24 +1,26 @@
 <template>
-  <canvas id="canvasAnim" width="800" height="800">Not supported Canvas</canvas>
-  <canvas id="canvasFill" width="800" height="800">Not supported Canvas</canvas>
-  <canvas
-    id="canvas"
-    width="800"
-    height="800"
-    @click="handleClick"
-    @dblclick="startDraw"
-    @contextmenu="endDrawLine"
-    @mousemove="mousemove"
-    @mousedown="mousedownPoint"
-    @mouseup="mouseupPoint"
-    >Not supported Canvas</canvas
-  >
-  <form id="context-menu" :class="{ isVisible: visibleContextMenu }">
-    <div>
-      <label>Введите число парковочных мест: </label>
-      <input type="text" />
-    </div>
-  </form>
+  <div>
+    <canvas id="canvasFill" width="800" height="800">Not supported Canvas</canvas>
+    <canvas id="canvasAnim" width="800" height="800">Not supported Canvas</canvas>
+    <canvas
+      id="canvas"
+      width="800"
+      height="800"
+      @click="handleClick"
+      @dblclick="startDraw"
+      @contextmenu="endDrawLine"
+      @mousemove="mousemove"
+      @mousedown="mousedownPoint"
+      @mouseup="mouseupPoint"
+      >Not supported Canvas</canvas
+    >
+    <form id="context-menu" :class="{ isVisible: visibleContextMenu }">
+      <div>
+        <label>Введите число парковочных мест: </label>
+        <input type="text" />
+      </div>
+    </form>
+  </div>
 </template>
 
 <script lang="ts">
@@ -31,26 +33,23 @@ export default defineComponent({
     return {
       lineClosed: -1,
       indexMovePoint: -1,
+      indexStartPoint: 0,
       points: defaultPoints,
       moveLine: false,
       downPoint: false,
       visibleContextMenu: false,
+      selectedPointPos: {x: -1, y: -1}
     };
   },
   methods: {
     startDraw(event: MouseEvent) {
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const x = event.offsetX;
+      const y = event.offsetY;
 
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-
-      let x = event.offsetX;
-      let y = event.offsetY;
-
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineWidth = 4;
 
       const points = this.points;
 
@@ -76,9 +75,11 @@ export default defineComponent({
       let x = event.offsetX;
       let y = event.offsetY;
 
-      if (this.$store.state.addPoint) {
+      // Добавление точки на линию
+      if (this.$store.state.addPoint && this.points.length > 1) {
+        const indexLine = this.lineover(x, y);
         const points = this.points;
-        points.push({
+        const point = {
           coordinates: {
             x,
             y,
@@ -89,53 +90,30 @@ export default defineComponent({
             placeNumber: 0,
             forDisabledDrive: false,
           },
-        });
+        }
+        points.splice(indexLine, 0, point)
         this.$store.dispatch("savePoint", points);
       }
 
-      if (this.$store.state.drawLine) {
-        // Замыкание линий
-        let indexFoundPoint = this.pointover(x, y);
-        // Если мы кликнули на точку
-        if (indexFoundPoint == 0) {
-          this.endDrawLine(event);
-          this.lineClosed = indexFoundPoint;
-          for (let i = 0; i < this.points.length; i++) {
-            this.points[i].finished = true;
-          }
-
-          return "Замкнулась";
+      // Выбор точки на линии
+      let indexFoundPoint = this.pointover(x, y);
+      if (
+          indexFoundPoint != -1 && 
+          this.selectedPointPos.x > this.points[indexFoundPoint].coordinates.x - 4 &&
+          this.selectedPointPos.x < this.points[indexFoundPoint].coordinates.x + 4
+        ) {
+          this.points[indexFoundPoint].finished = true;
+          this.indexStartPoint = indexFoundPoint
+          this.$store.dispatch("startDraw");
+          return "selescete";
         }
 
-        // let lastPoint = this.points[this.points.length - 1].coordinates;
-        // let penultPoint = this.points[this.points.length - 2] || {
-        //   coordinates: { x: -2, y: -2 }
-        // };
-
-        // let indexFoundPoint = this.pointover(x, y);
-
-        // // Если мы кликнули на точку
-        // if (indexFoundPoint != -1) {
-        //   let foundPoint = this.points[indexFoundPoint].coordinates;
-
-        //   if (
-        //     lastPoint.x != foundPoint.x &&
-        //     lastPoint.y != foundPoint.y &&
-        //     penultPoint.coordinates.x != foundPoint.x &&
-        //     penultPoint.coordinates.y != foundPoint.y
-        //   ) {
-        //     this.endDrawLine(event);
-        //     this.lineClosed = indexFoundPoint;
-        //     for(let i = indexFoundPoint; i < this.points.length; i++) {
-        //       this.points[i].finished = true;
-        //     }
-        //     return "Замкнулась";
-        //   }
-        // }
+      if (this.$store.state.drawLine) {
 
         // Добавление точек
+
         const points = this.points;
-        points.push({
+        const point = {
           coordinates: {
             x,
             y,
@@ -146,7 +124,9 @@ export default defineComponent({
             placeNumber: 0,
             forDisabledDrive: false,
           },
-        });
+        }
+        this.indexStartPoint++
+        points.splice(this.indexStartPoint, 0, point);
         this.$store.dispatch("savePoint", points);
       }
     },
@@ -154,23 +134,11 @@ export default defineComponent({
       let x = event.offsetX;
       let y = event.offsetY;
 
+      this.selectedPointPos = {x, y}; 
+
       if (this.pointover(x, y) >= 0) {
         this.downPoint = true;
         this.indexMovePoint = this.pointover(x, y);
-      }
-
-      // Перетаскивание линии
-      for (let i = 0; i < this.points.length - 1; i++) {
-        let pointLeft = this.points[i].coordinates;
-        let pointRight = this.points[i + 1].coordinates;
-        if (
-          x > pointLeft.x &&
-          x < pointRight.x &&
-          y > pointLeft.y &&
-          y < pointRight.y
-        ) {
-          this.moveLine = true;
-        }
       }
     },
     mouseupPoint() {
@@ -179,6 +147,7 @@ export default defineComponent({
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         this.$store.dispatch("changeAction", "auto");
         this.downPoint = false;
         this.indexMovePoint = -1;
@@ -195,11 +164,11 @@ export default defineComponent({
       let y = event.offsetY;
 
       if (this.$store.state.drawLine) {
-        let start = this.points[this.points.length - 1].coordinates;
+        let start = this.points[this.indexStartPoint].coordinates;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
-
+      
       // Если мы навелись мышкой на точку
       if (this.pointover(x, y) >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
@@ -256,6 +225,47 @@ export default defineComponent({
       }
       return -1;
     },
+    lineover(mouseX: number, mouseY: number) {
+      for (let i = 0; i < this.points.length; i++) {
+        // Сравнение координат мыши и линии
+        let startPoint = {x: 0, y: 0, positionNumber: 0};
+        let endPoint = {x: 0, y: 0, positionNumber: 0};
+        if (i == this.points.length - 1) {
+          startPoint = this.points[i - 1].coordinates;
+          endPoint = this.points[i].coordinates;
+        } else {
+          startPoint = this.points[i].coordinates;
+          endPoint = this.points[i + 1].coordinates;
+        }
+        // console.table({mouse: {x: mouseX, y: mouseY}, startPoint, endPoint})
+        if (
+          // Если линия направлена в правый нижний угол
+          (mouseX > startPoint.x &&
+          mouseX < endPoint.x &&
+          mouseY > startPoint.y &&
+          mouseY < endPoint.y) || 
+          // Если линия направлена в левый верхний угол
+          (mouseX < startPoint.x &&
+          mouseX > endPoint.x &&
+          mouseY < startPoint.y &&
+          mouseY > endPoint.y) || 
+          // Если линия направлена в правый верхний угол
+          (mouseX > startPoint.x &&
+          mouseX < endPoint.x &&
+          mouseY < startPoint.y &&
+          mouseY > endPoint.y) || 
+          // Если линия направлена в левый нижний угол
+          (mouseX < startPoint.x &&
+          mouseX > endPoint.x &&
+          mouseY > startPoint.y &&
+          mouseY < endPoint.y)
+
+        ) {
+          return i + 1;
+        }
+      }
+      return -1;
+    },
     endDrawLine(event: MouseEvent) {
       event.preventDefault();
       this.visibleContextMenu = true;
@@ -267,20 +277,35 @@ export default defineComponent({
       this.$store.dispatch("endDraw");
     },
     draw() {
+      this.points = this.$store.state.points;
+
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      this.points = this.$store.state.points;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Отрисовка всех точек и линий
-      for (let i = 1; i < this.points.length; i++) {
-        const start = this.points[i - 1].coordinates;
-        const end = this.points[i].coordinates;
-
-        ctx.fillStyle = "green";
+      if (this.points.length > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        const start = this.points[0].coordinates;
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
         ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-        ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-        this.drawLine(ctx, start.x, start.y, end.x, end.y);
+        for (let i = 1; i < this.points.length; i++) {
+          // const start = this.points[i - 1].coordinates;
+          const end = this.points[i].coordinates;
+          if (this.points[i].finished) {
+            ctx.fillStyle = "yellow";
+          } else {
+            ctx.fillStyle = "green";
+          }
+          // ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
+          ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
+          // this.drawLine(ctx, start.x, start.y, end.x, end.y);
+          ctx.lineTo(end.x, end.y);
+        }
+        ctx.stroke();
       }
 
       if (this.lineClosed != -1) {
@@ -300,9 +325,7 @@ export default defineComponent({
         ctxFill.beginPath();
         ctxFill.fillStyle = "rgba(0, 0, 0, .5)";
         for (let point of this.points) {
-          if (point.finished) {
-            ctxFill.lineTo(point.coordinates.x, point.coordinates.y);
-          }
+          ctxFill.lineTo(point.coordinates.x, point.coordinates.y);
         }
         ctxFill.fill();
       }
