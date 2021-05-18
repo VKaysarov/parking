@@ -1,17 +1,27 @@
 type parkingPlaceMetaData = {
-  placeNumber: number;
-  forDisabledDrive: boolean;
+  parking_size: number;
+  disabled: boolean;
 };
 
-type parkingPlaceCoordinateType = {
+type pointCoordinateType = {
+  id: number;
   x: number;
   y: number;
-  positionNumber: number;
+};
+
+type deltaCoordinateType = {
+  x: number;
+  y: number;
+};
+
+type mainLineType = {
+  points: pointCoordinateType[];
+  delta: deltaCoordinateType;
+  attributes: parkingPlaceMetaData;
 };
 
 type parkingPlaceType = {
-  coordinates: parkingPlaceCoordinateType;
-  meta: parkingPlaceMetaData;
-};
+  main_line: mainLineType;
+}
 
 type parkingPlacesArrayType = parkingPlaceType[];
