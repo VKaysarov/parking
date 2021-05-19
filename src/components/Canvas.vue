@@ -227,12 +227,7 @@ export default defineComponent({
         points[this.indexMovePoint].x = x;
         points[this.indexMovePoint].y = y;
         // Если это точка к которой привязана дельта, тогда перемещаем дельту
-        if (
-          x > this.selectedPointPos.x - 15 &&
-          x < this.selectedPointPos.x + 15 &&
-          y > this.selectedPointPos.y - 15 &&
-          y < this.selectedPointPos.y + 15
-        ) {
+        if (this.comparisonCordPoints(x, y, this.selectedPointPos.x, this.selectedPointPos.y)) {
           let xSub = x - this.startDeltaPos.x;
           let ySub = y - this.startDeltaPos.y;
           delta = {
@@ -252,17 +247,21 @@ export default defineComponent({
         this.$store.dispatch("savePoint", lines);
       }
     },
+    comparisonCordPoints(x1: number, y1: number, x2: number, y2: number) {
+      if (
+        x1 > x2- 15 &&
+        x1 < x2 + 15 &&
+        y1 > y2 - 15 &&
+        y1 < y2 + 15
+      ) {
+        return true;
+      }
+      return false;
+    },
     pointover(mouseX: number, mouseY: number) {
       for (let [index, point] of this.lines[0].main_line.points.entries()) {
         // Сравнение координат мыши и точки
-        if (
-          // По оси X
-          mouseX > point.x - 15 &&
-          mouseX < point.x + 15 &&
-          // По оси Y
-          mouseY > point.y - 15 &&
-          mouseY < point.y + 15
-        ) {
+        if (this.comparisonCordPoints(mouseX, mouseY, point.x, point.y)) {
           return index;
         }
       }
