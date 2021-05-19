@@ -135,7 +135,6 @@ export default defineComponent({
     mousemove(event: MouseEvent) {
       const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
@@ -149,7 +148,7 @@ export default defineComponent({
       }
       
       // Если мы навелись мышкой на точку
-      if (this.pointover(x, y) >= 0) {
+      if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       } else {
         this.$store.dispatch("changeAction", "auto");
@@ -168,7 +167,7 @@ export default defineComponent({
         if (this.indexMovePoint == 0) {
           let start = this.lines[0].main_line.points[this.indexMovePoint + 1];
           this.drawLine(ctx, start.x, start.y, x, y);
-          // Если это последняя точка
+        // Если это последняя точка
         } else if (this.indexMovePoint == this.lines[0].main_line.points.length - 1) {
           let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
           this.drawLine(ctx, start.x, start.y, x, y);
