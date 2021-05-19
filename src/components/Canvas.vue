@@ -39,7 +39,9 @@ export default defineComponent({
       downPoint: false,
       drawDelta: false,
       visibleContextMenu: false,
-      selectedPointPos: {x: -1, y: -1}
+      delta: {x: -1, y: -1},
+      startDeltaPos: {x: -1, y: -1},
+      selectedPointPos: {x: -1, y: -1},
     };
   },
   methods: {
@@ -101,6 +103,7 @@ export default defineComponent({
         let indexFoundPoint = this.pointover(x, y);
         if (indexFoundPoint != -1) {
           this.selectedPointPos = this.lines[0].main_line.points[indexFoundPoint];
+          this.startDeltaPos = {x, y}
           this.indexStartPoint = indexFoundPoint
           this.$store.dispatch("startDraw");
           this.drawDelta = true;
@@ -124,6 +127,7 @@ export default defineComponent({
         const lines = this.lines;
         lines[0].main_line.delta.x = x;
         lines[0].main_line.delta.y = y;
+        this.delta = {x, y};
         this.$store.dispatch("savePoint", lines);
       }
     },
@@ -201,12 +205,37 @@ export default defineComponent({
           ctx.stroke();
         }
 
-        // Сохранение изменения положения точки
-        const points = this.lines[0].main_line.points;
+        // Сохранение изменения координат точки
+        
+        const lines = this.lines;
+        const current_line = lines[0].main_line;
+        let {points, delta, attributes} = current_line;
+
         points[this.indexMovePoint].x = x;
         points[this.indexMovePoint].y = y;
-        const lines = this.lines
-        lines[0].main_line.points = points;
+        
+        // if () {
+          let xSub = x - this.startDeltaPos.x; 
+          let ySub = y - this.startDeltaPos.y; 
+          delta = {
+            x: this.delta.x + xSub,
+            y: this.delta.y + ySub,
+          };
+
+        // [2, 2]
+
+
+        // [2, 4]
+        // }
+        const line = {
+          main_line: {
+            points,
+            delta,
+            attributes,
+          }
+        }
+        
+        lines[0] = line;
         this.$store.dispatch("savePoint", lines);
       }
     },
