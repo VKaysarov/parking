@@ -34,7 +34,7 @@ export default defineComponent({
       lineClosed: -1,
       indexMovePoint: -1,
       indexStartPoint: 0,
-      points: defaultPoints,
+      lines: defaultPoints,
       moveLine: false,
       downPoint: false,
       visibleContextMenu: false,
@@ -45,24 +45,19 @@ export default defineComponent({
     startDraw(event: MouseEvent) {
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      
+      const points = this.lines[0].main_line.points;
+      const id = this.lines[0].main_line.points.length;
       const x = event.offsetX;
       const y = event.offsetY;
 
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
-      const points = this.points;
-
       points.push({
-        coordinates: {
-          x,
-          y,
-          positionNumber: 0,
-        },
-        meta: {
-          placeNumber: 0,
-          forDisabledDrive: false,
-        },
+        id,
+        x,
+        y,
       });
 
       this.$store.dispatch("savePoint", points);
@@ -75,20 +70,13 @@ export default defineComponent({
       let y = event.offsetY;
 
       // Добавление точки на линию
-      if (this.$store.state.addPoint && this.points.length > 1) {
+      if (this.$store.state.addPoint && this.lines[0].main_line.points.length > 1) {
         const indexLine = this.lineover(x, y);
-        const points = this.points;
+        const points = this.lines[0].main_line.points;
         const point = {
-          coordinates: {
-            x,
-            y,
-            positionNumber: 0,
-          },
-          finished: false,
-          meta: {
-            placeNumber: 0,
-            forDisabledDrive: false,
-          },
+          id: this.lines[0].main_line.points.length,
+          x,
+          y,
         }
         points.splice(indexLine, 0, point)
         this.$store.dispatch("savePoint", points);
@@ -98,8 +86,8 @@ export default defineComponent({
       let indexFoundPoint = this.pointover(x, y);
       if (
           indexFoundPoint != -1 && 
-          this.selectedPointPos.x > this.points[indexFoundPoint].coordinates.x - 4 &&
-          this.selectedPointPos.x < this.points[indexFoundPoint].coordinates.x + 4
+          this.selectedPointPos.x > this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
+          this.selectedPointPos.x < this.lines[0].main_line.points[indexFoundPoint].x + 4
         ) {
           this.indexStartPoint = indexFoundPoint
           this.$store.dispatch("startDraw");
@@ -110,18 +98,11 @@ export default defineComponent({
 
         // Добавление точек
 
-        const points = this.points;
+        const points = this.lines[0].main_line.points;
         const point = {
-          coordinates: {
-            x,
-            y,
-            positionNumber: 0,
-          },
-          finished: false,
-          meta: {
-            placeNumber: 0,
-            forDisabledDrive: false,
-          },
+          id: this.lines[0].main_line.points.length,
+          x,
+          y,
         }
         this.indexStartPoint++
         points.splice(this.indexStartPoint, 0, point);
@@ -162,7 +143,7 @@ export default defineComponent({
       let y = event.offsetY;
 
       if (this.$store.state.drawLine) {
-        let start = this.points[this.indexStartPoint].coordinates;
+        let start = this.lines[0].main_line.points[this.indexStartPoint];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
@@ -185,15 +166,15 @@ export default defineComponent({
         ctx.beginPath();
         // Если это первая точка
         if (this.indexMovePoint == 0) {
-          let start = this.points[this.indexMovePoint + 1].coordinates;
+          let start = this.lines[0].main_line.points[this.indexMovePoint + 1];
           this.drawLine(ctx, start.x, start.y, x, y);
           // Если это последняя точка
-        } else if (this.indexMovePoint == this.points.length - 1) {
-          let start = this.points[this.indexMovePoint - 1].coordinates;
+        } else if (this.indexMovePoint == this.lines[0].main_line.points.length - 1) {
+          let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
           this.drawLine(ctx, start.x, start.y, x, y);
         } else {
-          let start = this.points[this.indexMovePoint - 1].coordinates;
-          let end = this.points[this.indexMovePoint + 1].coordinates;
+          let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
+          let end = this.lines[0].main_line.points[this.indexMovePoint + 1];
           ctx.moveTo(start.x, start.y);
           ctx.lineTo(x, y);
           ctx.lineTo(end.x, end.y);
@@ -201,22 +182,23 @@ export default defineComponent({
         }
 
         // Сохранение изменения положения точки
-        const points = this.points;
-        points[this.indexMovePoint].coordinates.x = x;
-        points[this.indexMovePoint].coordinates.y = y;
+        const points = this.lines[0].main_line.points;
+        points[this.indexMovePoint].x = x;
+        points[this.indexMovePoint].y = y;
         this.$store.dispatch("savePoint", points);
       }
     },
     pointover(mouseX: number, mouseY: number) {
-      for (let [index, point] of this.points.entries()) {
+      console.log(this.lines)
+      for (let [index, point] of this.lines[0].main_line.points.entries()) {
         // Сравнение координат мыши и точки
         if (
           // По оси X
-          mouseX > point.coordinates.x - 15 &&
-          mouseX < point.coordinates.x + 15 &&
+          mouseX > point.x - 15 &&
+          mouseX < point.x + 15 &&
           // По оси Y
-          mouseY > point.coordinates.y - 15 &&
-          mouseY < point.coordinates.y + 15
+          mouseY > point.y - 15 &&
+          mouseY < point.y + 15
         ) {
           return index;
         }
@@ -224,16 +206,16 @@ export default defineComponent({
       return -1;
     },
     lineover(mouseX: number, mouseY: number) {
-      for (let i = 0; i < this.points.length; i++) {
+      for (let i = 0; i < this.lines[0].main_line.points.length; i++) {
         // Сравнение координат мыши и линии
-        let startPoint = {x: 0, y: 0, positionNumber: 0};
-        let endPoint = {x: 0, y: 0, positionNumber: 0};
-        if (i == this.points.length - 1) {
-          startPoint = this.points[i - 1].coordinates;
-          endPoint = this.points[i].coordinates;
+        let startPoint = {id: 0, x: 0, y: 0};
+        let endPoint = {id: 0, x: 0, y: 0};
+        if (i == this.lines[0].main_line.points.length - 1) {
+          startPoint = this.lines[0].main_line.points[i - 1];
+          endPoint = this.lines[0].main_line.points[i];
         } else {
-          startPoint = this.points[i].coordinates;
-          endPoint = this.points[i + 1].coordinates;
+          startPoint = this.lines[0].main_line.points[i];
+          endPoint = this.lines[0].main_line.points[i + 1];
         }
         // console.table({mouse: {x: mouseX, y: mouseY}, startPoint, endPoint})
         if (
@@ -275,24 +257,23 @@ export default defineComponent({
       this.$store.dispatch("endDraw");
     },
     draw() {
-      this.points = this.$store.state.points;
+      this.lines = this.$store.state.lines;
 
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
       // Отрисовка всех точек и линий
-      if (this.points.length > 0) {
+      if (this.lines[0].main_line.points.length > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = 5;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        const start = this.points[0].coordinates;
+        const start = this.lines[0].main_line.points[0];
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
         ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-        for (let i = 1; i < this.points.length; i++) {
-          // const start = this.points[i - 1].coordinates;
-          const end = this.points[i].coordinates;
+        for (let i = 1; i < this.lines[0].main_line.points.length; i++) {
+          // const start = this.lines[0].main_line.points[i - 1];
+          const end = this.lines[0].main_line.points[i];
           ctx.fillStyle = "green";
           // ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
           ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
@@ -304,8 +285,8 @@ export default defineComponent({
 
       if (this.lineClosed != -1) {
         // Отрисовка замыкания фигуры
-        const start = this.points[this.points.length - 1].coordinates;
-        const end = this.points[this.lineClosed].coordinates;
+        const start = this.lines[0].main_line.points[this.lines[0].main_line.points.length - 1];
+        const end = this.lines[0].main_line.points[this.lineClosed];
         this.drawLine(ctx, start.x, start.y, end.x, end.y);
 
         // Закрашивание фигуры
@@ -318,8 +299,8 @@ export default defineComponent({
 
         ctxFill.beginPath();
         ctxFill.fillStyle = "rgba(0, 0, 0, .5)";
-        for (let point of this.points) {
-          ctxFill.lineTo(point.coordinates.x, point.coordinates.y);
+        for (let point of this.lines[0].main_line.points) {
+          ctxFill.lineTo(point.x, point.y);
         }
         ctxFill.fill();
       }
