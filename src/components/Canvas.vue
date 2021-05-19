@@ -98,44 +98,37 @@ export default defineComponent({
       // Выбор точки на линии
       if (this.lines.length > 0) {
         let indexFoundPoint = this.pointover(x, y);
-        if (
-            indexFoundPoint != -1 && 
-            this.selectedPointPos.x > this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
-            this.selectedPointPos.x < this.lines[0].main_line.points[indexFoundPoint].x + 4
-          ) {
-            this.indexStartPoint = indexFoundPoint
-            this.$store.dispatch("startDraw");
-            this.drawDelta = true;
-            return "selected";
-          }
+        if (indexFoundPoint != -1) {
+          this.selectedPointPos = this.lines[0].main_line.points[indexFoundPoint];
+          this.indexStartPoint = indexFoundPoint
+          this.$store.dispatch("startDraw");
+          this.drawDelta = true;
+        }
       }
 
       if (this.$store.state.drawLine) {
-
+        
         // Добавление точек
-        if (this.drawDelta) {
-          this.lines[0].main_line.delta.x = x;
-          this.lines[0].main_line.delta.y = y;
-          return "delta";
-        } 
-        const points = this.lines[0].main_line.points;
-        const point = {
-          id: this.lines[0].main_line.points.length,
-          x,
-          y,
+        if (!this.drawDelta) {
+          const points = this.lines[0].main_line.points;
+          const point = {
+            id: this.lines[0].main_line.points.length,
+            x,
+            y,
+          }
+          points.push(point);
+          this.indexStartPoint++;
+          this.lines[0].main_line.points = points;
         }
-        points.push(point);
-        this.indexStartPoint++;
-        this.lines[0].main_line.points = points;
         const lines = this.lines;
+        lines[0].main_line.delta.x = x;
+        lines[0].main_line.delta.y = y;
         this.$store.dispatch("savePoint", lines);
       }
     },
     mousedownPoint(event: MouseEvent) {
       let x = event.offsetX;
       let y = event.offsetY;
-
-      this.selectedPointPos = {x, y}; 
 
       if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
         this.downPoint = true;
@@ -297,11 +290,11 @@ export default defineComponent({
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
+        const start = this.lines[0].main_line.points[0];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = 5;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        const start = this.lines[0].main_line.points[0];
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
         ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
@@ -312,6 +305,11 @@ export default defineComponent({
           ctx.lineTo(end.x, end.y);
         }
         ctx.stroke();
+
+        if (this.drawDelta) {
+          this.drawLine(ctx, this.selectedPointPos.x, this.selectedPointPos.y, this.lines[0].main_line.delta.x, this.lines[0].main_line.delta.y)
+        }
+
       }
 
       requestAnimationFrame(this.draw);
