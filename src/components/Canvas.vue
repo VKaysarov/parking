@@ -114,6 +114,11 @@ export default defineComponent({
       if (this.$store.state.drawLine) {
 
         // Добавление точек
+        if (this.drawDelta) {
+          this.lines[0].main_line.delta.x = x;
+          this.lines[0].main_line.delta.y = y;
+          return "delta";
+        } 
         const points = this.lines[0].main_line.points;
         const point = {
           id: this.lines[0].main_line.points.length,
@@ -121,9 +126,7 @@ export default defineComponent({
           y,
         }
         points.push(point);
-        if (!this.drawDelta) {
-          this.indexStartPoint++;
-        }
+        this.indexStartPoint++;
         this.lines[0].main_line.points = points;
         const lines = this.lines;
         this.$store.dispatch("savePoint", lines);
