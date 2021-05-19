@@ -221,11 +221,6 @@ export default defineComponent({
             x: this.delta.x + xSub,
             y: this.delta.y + ySub,
           };
-
-        // [2, 2]
-
-
-        // [2, 4]
         // }
         const line = {
           main_line: {
