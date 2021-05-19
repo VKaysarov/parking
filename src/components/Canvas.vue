@@ -94,8 +94,10 @@ export default defineComponent({
           x,
           y,
         }
-        points.splice(indexLine, 0, point)
-        this.$store.dispatch("savePoint", points);
+        points.splice(indexLine, 0, point);
+        this.lines[0].main_line.points = points;
+        this.$store.dispatch("savePoint", this.lines);
+        return "Add point";
       }
 
       // Выбор точки на линии
