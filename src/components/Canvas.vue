@@ -262,7 +262,7 @@ export default defineComponent({
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       // Отрисовка всех точек и линий
-      if (this.lines[0].main_line.points.length > 0) {
+      if (this.lines.length > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = 5;
         ctx.lineJoin = 'round';
