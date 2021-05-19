@@ -115,7 +115,7 @@ export default defineComponent({
 
       this.selectedPointPos = {x, y}; 
 
-      if (this.pointover(x, y) >= 0) {
+      if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
         this.downPoint = true;
         this.indexMovePoint = this.pointover(x, y);
       }
