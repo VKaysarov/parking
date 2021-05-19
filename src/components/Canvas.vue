@@ -201,7 +201,22 @@ export default defineComponent({
         const points = this.lines[0].main_line.points;
         points[this.indexMovePoint].x = x;
         points[this.indexMovePoint].y = y;
-        this.$store.dispatch("savePoint", points);
+        const lines = this.lines;
+        const line = {
+          main_line: {
+            points,
+            delta: {
+              x: 0,
+              y: 0,
+            },
+            attributes: {
+              parking_size: 0,
+              disabled: false
+            }
+          }
+        }
+        lines[0] = line;
+        this.$store.dispatch("savePoint", lines);
       }
     },
     pointover(mouseX: number, mouseY: number) {
