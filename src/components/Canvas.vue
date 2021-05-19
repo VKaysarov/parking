@@ -68,7 +68,7 @@ export default defineComponent({
 
       let x = event.offsetX;
       let y = event.offsetY;
-
+      
       // Добавление точки на линию
       if (this.$store.state.addPoint && this.lines[0].main_line.points.length > 1) {
         const indexLine = this.lineover(x, y);
@@ -83,21 +83,22 @@ export default defineComponent({
       }
 
       // Выбор точки на линии
-      let indexFoundPoint = this.pointover(x, y);
-      if (
-          indexFoundPoint != -1 && 
-          this.selectedPointPos.x > this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
-          this.selectedPointPos.x < this.lines[0].main_line.points[indexFoundPoint].x + 4
-        ) {
-          this.indexStartPoint = indexFoundPoint
-          this.$store.dispatch("startDraw");
-          return "selescete";
-        }
+      if (this.lines.length > 0) {
+        let indexFoundPoint = this.pointover(x, y);
+        if (
+            indexFoundPoint != -1 && 
+            this.selectedPointPos.x > this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
+            this.selectedPointPos.x < this.lines[0].main_line.points[indexFoundPoint].x + 4
+          ) {
+            this.indexStartPoint = indexFoundPoint
+            this.$store.dispatch("startDraw");
+            return "selescete";
+          }
+      }
 
       if (this.$store.state.drawLine) {
 
         // Добавление точек
-
         const points = this.lines[0].main_line.points;
         const point = {
           id: this.lines[0].main_line.points.length,
@@ -106,7 +107,9 @@ export default defineComponent({
         }
         this.indexStartPoint++
         points.splice(this.indexStartPoint, 0, point);
-        this.$store.dispatch("savePoint", points);
+        this.lines[0].main_line.points = points;
+        const lines = this.lines;
+        this.$store.dispatch("savePoint", lines);
       }
     },
     mousedownPoint(event: MouseEvent) {
