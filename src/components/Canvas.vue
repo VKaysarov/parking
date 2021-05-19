@@ -8,7 +8,7 @@
       height="800"
       @click="handleClick"
       @dblclick="startDraw"
-      @contextmenu="endDrawLine"
+      @contextmenu="endDraw"
       @mousemove="mousemove"
       @mousedown="mousedownPoint"
       @mouseup="mouseupPoint"
@@ -290,7 +290,7 @@ export default defineComponent({
       }
       return -1;
     },
-    endDrawLine(event: MouseEvent) {
+    endDraw(event: MouseEvent) {
       event.preventDefault();
       this.visibleContextMenu = true;
       const contextMenu = document.querySelector(
