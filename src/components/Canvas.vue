@@ -42,25 +42,39 @@ export default defineComponent({
     };
   },
   methods: {
-    startDraw(event: MouseEvent) {
+   startDraw(event: MouseEvent) {
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       
-      const points = this.lines[0].main_line.points;
-      const id = this.lines[0].main_line.points.length;
+      const lines = this.lines;
+      const id = 0;
       const x = event.offsetX;
       const y = event.offsetY;
+      const line = {
+        main_line: {
+          points: [{
+            id,
+            x,
+            y,
+          }],
+          delta: {
+            x: 0,
+            y: 0,
+          },
+          attributes: {
+            parking_size: 0,
+            disabled: false
+          }
+        }
+      }
 
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
 
-      points.push({
-        id,
-        x,
-        y,
-      });
 
-      this.$store.dispatch("savePoint", points);
+      lines.push(line);
+
+      this.$store.dispatch("savePoint", lines);
       this.$store.dispatch("startDraw");
     },
     handleClick(event: MouseEvent) {
