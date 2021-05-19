@@ -31,7 +31,6 @@ export default defineComponent({
   data() {
     const defaultPoints: parkingPlacesArrayType = []
     return {
-      lineClosed: -1,
       indexMovePoint: -1,
       indexStartPoint: 0,
       lines: defaultPoints,
@@ -307,37 +306,12 @@ export default defineComponent({
         ctx.moveTo(start.x, start.y);
         ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
         for (let i = 1; i < this.lines[0].main_line.points.length; i++) {
-          // const start = this.lines[0].main_line.points[i - 1];
           const end = this.lines[0].main_line.points[i];
           ctx.fillStyle = "green";
-          // ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
           ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-          // this.drawLine(ctx, start.x, start.y, end.x, end.y);
           ctx.lineTo(end.x, end.y);
         }
         ctx.stroke();
-      }
-
-      if (this.lineClosed != -1) {
-        // Отрисовка замыкания фигуры
-        const start = this.lines[0].main_line.points[this.lines[0].main_line.points.length - 1];
-        const end = this.lines[0].main_line.points[this.lineClosed];
-        this.drawLine(ctx, start.x, start.y, end.x, end.y);
-
-        // Закрашивание фигуры
-        const canvasFill = document.querySelector(
-          "#canvasFill"
-        ) as HTMLCanvasElement;
-        const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
-        canvasFill.width = canvasFill.offsetWidth;
-        canvasFill.height = canvasFill.offsetHeight;
-
-        ctxFill.beginPath();
-        ctxFill.fillStyle = "rgba(0, 0, 0, .5)";
-        for (let point of this.lines[0].main_line.points) {
-          ctxFill.lineTo(point.x, point.y);
-        }
-        ctxFill.fill();
       }
 
       requestAnimationFrame(this.draw);
