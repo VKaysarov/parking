@@ -205,7 +205,6 @@ export default defineComponent({
       }
     },
     pointover(mouseX: number, mouseY: number) {
-      console.log(this.lines)
       for (let [index, point] of this.lines[0].main_line.points.entries()) {
         // Сравнение координат мыши и точки
         if (
@@ -233,7 +232,6 @@ export default defineComponent({
           startPoint = this.lines[0].main_line.points[i];
           endPoint = this.lines[0].main_line.points[i + 1];
         }
-        // console.table({mouse: {x: mouseX, y: mouseY}, startPoint, endPoint})
         if (
           // Если линия направлена в правый нижний угол
           (mouseX > startPoint.x &&
