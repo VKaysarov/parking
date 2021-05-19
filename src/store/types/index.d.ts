@@ -22,6 +22,6 @@ type mainLineType = {
 
 type parkingPlaceType = {
   main_line: mainLineType;
-}
+};
 
 type parkingPlacesArrayType = parkingPlaceType[];

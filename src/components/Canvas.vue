@@ -1,7 +1,11 @@
 <template>
   <div>
-    <canvas id="canvasFill" width="800" height="800">Not supported Canvas</canvas>
-    <canvas id="canvasAnim" width="800" height="800">Not supported Canvas</canvas>
+    <canvas id="canvasFill" width="800" height="800"
+      >Not supported Canvas</canvas
+    >
+    <canvas id="canvasAnim" width="800" height="800"
+      >Not supported Canvas</canvas
+    >
     <canvas
       id="canvas"
       width="800"
@@ -29,7 +33,7 @@ import { defineComponent } from "vue";
 export default defineComponent({
   name: "Canvas",
   data() {
-    const defaultPoints: parkingPlacesArrayType = []
+    const defaultPoints: parkingPlacesArrayType = [];
     return {
       lineClosed: -1,
       indexMovePoint: -1,
@@ -38,39 +42,40 @@ export default defineComponent({
       moveLine: false,
       downPoint: false,
       visibleContextMenu: false,
-      selectedPointPos: {x: -1, y: -1}
+      selectedPointPos: { x: -1, y: -1 },
     };
   },
   methods: {
-   startDraw(event: MouseEvent) {
+    startDraw(event: MouseEvent) {
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      
+
       const lines = this.lines;
       const id = 0;
       const x = event.offsetX;
       const y = event.offsetY;
       const line = {
         main_line: {
-          points: [{
-            id,
-            x,
-            y,
-          }],
+          points: [
+            {
+              id,
+              x,
+              y,
+            },
+          ],
           delta: {
             x: 0,
             y: 0,
           },
           attributes: {
             parking_size: 0,
-            disabled: false
-          }
-        }
-      }
+            disabled: false,
+          },
+        },
+      };
 
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
-
 
       lines.push(line);
 
@@ -82,17 +87,20 @@ export default defineComponent({
 
       let x = event.offsetX;
       let y = event.offsetY;
-      
+
       // Добавление точки на линию
-      if (this.$store.state.addPoint && this.lines[0].main_line.points.length > 1) {
+      if (
+        this.$store.state.addPoint &&
+        this.lines[0].main_line.points.length > 1
+      ) {
         const indexLine = this.lineover(x, y);
         const points = this.lines[0].main_line.points;
         const point = {
           id: this.lines[0].main_line.points.length,
           x,
           y,
-        }
-        points.splice(indexLine, 0, point)
+        };
+        points.splice(indexLine, 0, point);
         this.$store.dispatch("savePoint", points);
       }
 
@@ -100,26 +108,27 @@ export default defineComponent({
       if (this.lines.length > 0) {
         let indexFoundPoint = this.pointover(x, y);
         if (
-            indexFoundPoint != -1 && 
-            this.selectedPointPos.x > this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
-            this.selectedPointPos.x < this.lines[0].main_line.points[indexFoundPoint].x + 4
-          ) {
-            this.indexStartPoint = indexFoundPoint
-            this.$store.dispatch("startDraw");
-            return "selescete";
-          }
+          indexFoundPoint != -1 &&
+          this.selectedPointPos.x >
+            this.lines[0].main_line.points[indexFoundPoint].x - 4 &&
+          this.selectedPointPos.x <
+            this.lines[0].main_line.points[indexFoundPoint].x + 4
+        ) {
+          this.indexStartPoint = indexFoundPoint;
+          this.$store.dispatch("startDraw");
+          return "selescete";
+        }
       }
 
       if (this.$store.state.drawLine) {
-
         // Добавление точек
         const points = this.lines[0].main_line.points;
         const point = {
           id: this.lines[0].main_line.points.length,
           x,
           y,
-        }
-        this.indexStartPoint++
+        };
+        this.indexStartPoint++;
         points.splice(this.indexStartPoint, 0, point);
         this.lines[0].main_line.points = points;
         const lines = this.lines;
@@ -130,7 +139,7 @@ export default defineComponent({
       let x = event.offsetX;
       let y = event.offsetY;
 
-      this.selectedPointPos = {x, y}; 
+      this.selectedPointPos = { x, y };
 
       if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
         this.downPoint = true;
@@ -143,7 +152,7 @@ export default defineComponent({
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
+
         this.$store.dispatch("changeAction", "auto");
         this.downPoint = false;
         this.indexMovePoint = -1;
@@ -163,7 +172,7 @@ export default defineComponent({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
-      
+
       // Если мы навелись мышкой на точку
       if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
@@ -184,8 +193,11 @@ export default defineComponent({
         if (this.indexMovePoint == 0) {
           let start = this.lines[0].main_line.points[this.indexMovePoint + 1];
           this.drawLine(ctx, start.x, start.y, x, y);
-        // Если это последняя точка
-        } else if (this.indexMovePoint == this.lines[0].main_line.points.length - 1) {
+          // Если это последняя точка
+        } else if (
+          this.indexMovePoint ==
+          this.lines[0].main_line.points.length - 1
+        ) {
           let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
           this.drawLine(ctx, start.x, start.y, x, y);
         } else {
@@ -211,10 +223,10 @@ export default defineComponent({
             },
             attributes: {
               parking_size: 0,
-              disabled: false
-            }
-          }
-        }
+              disabled: false,
+            },
+          },
+        };
         lines[0] = line;
         this.$store.dispatch("savePoint", lines);
       }
@@ -238,8 +250,8 @@ export default defineComponent({
     lineover(mouseX: number, mouseY: number) {
       for (let i = 0; i < this.lines[0].main_line.points.length; i++) {
         // Сравнение координат мыши и линии
-        let startPoint = {id: 0, x: 0, y: 0};
-        let endPoint = {id: 0, x: 0, y: 0};
+        let startPoint = { id: 0, x: 0, y: 0 };
+        let endPoint = { id: 0, x: 0, y: 0 };
         if (i == this.lines[0].main_line.points.length - 1) {
           startPoint = this.lines[0].main_line.points[i - 1];
           endPoint = this.lines[0].main_line.points[i];
@@ -250,25 +262,24 @@ export default defineComponent({
         if (
           // Если линия направлена в правый нижний угол
           (mouseX > startPoint.x &&
-          mouseX < endPoint.x &&
-          mouseY > startPoint.y &&
-          mouseY < endPoint.y) || 
+            mouseX < endPoint.x &&
+            mouseY > startPoint.y &&
+            mouseY < endPoint.y) ||
           // Если линия направлена в левый верхний угол
           (mouseX < startPoint.x &&
-          mouseX > endPoint.x &&
-          mouseY < startPoint.y &&
-          mouseY > endPoint.y) || 
+            mouseX > endPoint.x &&
+            mouseY < startPoint.y &&
+            mouseY > endPoint.y) ||
           // Если линия направлена в правый верхний угол
           (mouseX > startPoint.x &&
-          mouseX < endPoint.x &&
-          mouseY < startPoint.y &&
-          mouseY > endPoint.y) || 
+            mouseX < endPoint.x &&
+            mouseY < startPoint.y &&
+            mouseY > endPoint.y) ||
           // Если линия направлена в левый нижний угол
           (mouseX < startPoint.x &&
-          mouseX > endPoint.x &&
-          mouseY > startPoint.y &&
-          mouseY < endPoint.y)
-
+            mouseX > endPoint.x &&
+            mouseY > startPoint.y &&
+            mouseY < endPoint.y)
         ) {
           return i + 1;
         }
@@ -294,8 +305,8 @@ export default defineComponent({
       if (this.lines.length > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = 5;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
         const start = this.lines[0].main_line.points[0];
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);
@@ -314,7 +325,10 @@ export default defineComponent({
 
       if (this.lineClosed != -1) {
         // Отрисовка замыкания фигуры
-        const start = this.lines[0].main_line.points[this.lines[0].main_line.points.length - 1];
+        const start =
+          this.lines[0].main_line.points[
+            this.lines[0].main_line.points.length - 1
+          ];
         const end = this.lines[0].main_line.points[this.lineClosed];
         this.drawLine(ctx, start.x, start.y, end.x, end.y);
 
