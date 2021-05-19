@@ -160,6 +160,7 @@ export default defineComponent({
       let x = event.offsetX;
       let y = event.offsetY;
 
+      // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
         let start = this.lines[0].main_line.points[this.indexStartPoint];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -204,21 +205,8 @@ export default defineComponent({
         const points = this.lines[0].main_line.points;
         points[this.indexMovePoint].x = x;
         points[this.indexMovePoint].y = y;
-        const lines = this.lines;
-        const line = {
-          main_line: {
-            points,
-            delta: {
-              x: 0,
-              y: 0,
-            },
-            attributes: {
-              parking_size: 0,
-              disabled: false
-            }
-          }
-        }
-        lines[0] = line;
+        const lines = this.lines
+        lines[0].main_line.points = points;
         this.$store.dispatch("savePoint", lines);
       }
     },
