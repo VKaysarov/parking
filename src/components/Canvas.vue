@@ -35,6 +35,7 @@ export default defineComponent({
       indexStartPoint: 0,
       lines: defaultPoints,
       moveLine: false,
+      movePoint: false,
       downPoint: false,
       drawDelta: false,
       visibleContextMenu: false,
@@ -96,7 +97,7 @@ export default defineComponent({
       }
 
       // Выбор точки на линии
-      if (this.lines.length > 0) {
+      if (this.lines.length > 0 && !this.movePoint) {
         let indexFoundPoint = this.pointover(x, y);
         if (indexFoundPoint != -1) {
           this.selectedPointPos = this.lines[0].main_line.points[indexFoundPoint];
@@ -144,7 +145,10 @@ export default defineComponent({
         
         this.$store.dispatch("changeAction", "auto");
         this.downPoint = false;
-        this.indexMovePoint = -1;
+        setTimeout(() => {
+          this.movePoint = false;
+          this.indexMovePoint = -1;
+        }, 50)
       }
     },
     mousemove(event: MouseEvent) {
@@ -175,6 +179,7 @@ export default defineComponent({
 
       // Перетаскивание точки
       if (this.downPoint) {
+        this.movePoint = true;
         this.$store.dispatch("changeAction", "movePoint");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
