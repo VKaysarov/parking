@@ -1,9 +1,8 @@
 import { createStore } from "vuex";
-const defaultlines: parkingPlacesArrayType = [];
 
 export default createStore({
   state: {
-    lines: defaultlines,
+    lines: [] as parkingPlacesArrayType,
     drawLine: false,
     addPoint: false,
     action: "auto",

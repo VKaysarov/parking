@@ -1,9 +1,15 @@
 <template>
   <div>
-    <canvas id="canvasFill" width="800" height="800"
+    <canvas
+      id="canvasFill"
+      width="800"
+      height="800"
       >Not supported Canvas</canvas
     >
-    <canvas id="canvasAnim" width="800" height="800"
+    <canvas
+      id="canvasAnim"
+      width="800"
+      height="800"
       >Not supported Canvas</canvas
     >
     <canvas
@@ -33,11 +39,10 @@ import { defineComponent } from "vue";
 export default defineComponent({
   name: "Canvas",
   data() {
-    const defaultPoints: parkingPlacesArrayType = [];
     return {
       indexMovePoint: -1,
       indexStartPoint: 0,
-      lines: defaultPoints,
+      lines: [] as parkingPlacesArrayType,
       moveLine: false,
       movePoint: false,
       downPoint: false,
