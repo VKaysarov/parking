@@ -8,7 +8,10 @@ interface ICoordinates {
   y: number;
 };
 
-interface IPointCoordinate extends ICoordinates { id: number };
+interface IPointCoordinate extends ICoordinates {
+  id: number;
+  joinedDelta: boolean;
+};
 
 interface IMainLine {
   points: IPointCoordinate[];

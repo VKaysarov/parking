@@ -40,6 +40,7 @@ export default defineComponent({
   name: "Canvas",
   data() {
     return {
+      indexStartLine: 0,
       indexStartPoint: 0,
       lines: [] as parkingPlacesArrayType,
       moveLine: false,
@@ -59,7 +60,6 @@ export default defineComponent({
   methods: {
     startDraw(event: MouseEvent) {
       this.indexStartPoint = 0;
-      const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
 
       const { lines } = this;
       const id = 0;
@@ -72,6 +72,7 @@ export default defineComponent({
               id,
               x,
               y,
+              joinedDelta: false,
             },
           ],
           delta: {
@@ -84,9 +85,6 @@ export default defineComponent({
           },
         },
       };
-
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
 
       lines.push(line);
 
@@ -108,6 +106,7 @@ export default defineComponent({
           id: points.length,
           x,
           y,
+          joinedDelta: false,
         };
         points.splice(indexPoint, 0, point);
         this.lines[indexLine].main_line.points = points;
@@ -116,13 +115,13 @@ export default defineComponent({
       }
 
       // Выбор точки на линии
-      if (this.lines.length > 0 && !this.movePoint) {
-        let indexFoundPoint = this.pointover(x, y).indexPoint;
-        if (indexFoundPoint != -1) {
-          this.selectedPointPos =
-            this.lines[0].main_line.points[indexFoundPoint];
+      if (this.lines.length > 0 && !this.movePoint.state) {
+        let {indexPoint, indexLine} = this.pointover(x, y);
+        if (indexPoint != -1) {
+          this.lines[indexLine].main_line.points[indexPoint].joinedDelta = true;
           this.startDeltaPos = { x, y };
-          this.indexStartPoint = indexFoundPoint;
+          this.indexStartPoint = indexPoint;
+          this.indexStartLine = indexLine;
           this.$store.dispatch("startDraw");
           this.drawDelta = true;
         }
@@ -137,14 +136,15 @@ export default defineComponent({
             id: points.length,
             x,
             y,
+            joinedDelta: false,
           };
           points.push(point);
           this.indexStartPoint++;
           this.lines[countLines - 1].main_line.points = points;
         }
         const { lines } = this;
-        lines[countLines - 1].main_line.delta.x = x;
-        lines[countLines - 1].main_line.delta.y = y;
+        lines[this.indexStartLine].main_line.delta.x = x;
+        lines[this.indexStartLine].main_line.delta.y = y;
         this.delta = { x, y };
         this.$store.dispatch("savePoint", lines);
       }
@@ -162,11 +162,6 @@ export default defineComponent({
     },
     mouseupPoint() {
       if (this.downPoint) {
-        const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         this.$store.dispatch("changeAction", "auto");
         this.downPoint = false;
         setTimeout(() => {
@@ -186,7 +181,7 @@ export default defineComponent({
 
       // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
-        let start = this.lines[this.lines.length - 1].main_line.points[this.indexStartPoint];
+        let start = this.lines[this.indexStartLine].main_line.points[this.indexStartPoint];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
@@ -236,8 +231,13 @@ export default defineComponent({
 
         points[this.movePoint.index].x = x;
         points[this.movePoint.index].y = y;
+        let index = points.findIndex((element, index) => {
+          if (element.joinedDelta) {
+            return index;
+          }
+        })
         // Если это точка к которой привязана дельта, тогда перемещаем дельту
-        if (this.comparisonCordPoints(x, y, this.selectedPointPos.x, this.selectedPointPos.y)) {
+        if (index != -1 && this.comparisonCordPoints(x, y, points[index].x, points[index].y)) {
           let xSub = x - this.startDeltaPos.x;
           let ySub = y - this.startDeltaPos.y;
           delta = {
@@ -245,6 +245,7 @@ export default defineComponent({
             y: this.delta.y + ySub,
           };
         }
+
         const line = {
           main_line: {
             points,
@@ -330,12 +331,16 @@ export default defineComponent({
       contextMenu.style.left = `${event.offsetX}px`;
       contextMenu.style.top = `${event.offsetY}px`;
       this.$store.dispatch("endDraw");
+      this.indexStartLine++;
     },
     draw() {
       this.lines = this.$store.state.lines;
 
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -343,6 +348,7 @@ export default defineComponent({
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
 
+        let jj = 1;
         for (let line of this.lines) {
           const points = line.main_line.points;
           const start = points[0];
@@ -354,19 +360,29 @@ export default defineComponent({
             ctx.fillStyle = "green";
             ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
             ctx.lineTo(end.x, end.y);
+            ctx.fillText(`${end.x}, ${end.y}`, end.x - 20, end.y - 20);
           }
           ctx.stroke();
+          if (this.drawDelta) {
+            let index = points.findIndex((element, index) => {
+              if (element.joinedDelta) {
+                return index;
+              }
+            })
+            if (index != -1) {
+              this.drawLine(
+                ctx,
+                points[index].x,
+                points[index].y,
+                line.main_line.delta.x,
+                line.main_line.delta.y
+              );
+            }
+            ctx.fillText(`delta ${jj}`, line.main_line.delta.x, line.main_line.delta.y)
+            jj++
+          }
         }
 
-        if (this.drawDelta) {
-          this.drawLine(
-            ctx,
-            this.selectedPointPos.x,
-            this.selectedPointPos.y,
-            this.lines[0].main_line.delta.x,
-            this.lines[0].main_line.delta.y
-          );
-        }
       }
 
       requestAnimationFrame(this.draw);
@@ -392,7 +408,9 @@ export default defineComponent({
       }
     });
     addEventListener('keyup', (event: KeyboardEvent) => {
-      this.$store.dispatch("addPoint");
+      if (event.key === "Control") {
+        this.$store.dispatch("addPoint");
+      }
     });
   },
 });
