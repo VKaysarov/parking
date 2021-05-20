@@ -354,8 +354,6 @@ export default defineComponent({
         ctx.lineWidth = 5;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-
-        let jj = 1;
         for (let line of this.lines) {
           const points = line.main_line.points;
           const start = points[0];
@@ -367,7 +365,6 @@ export default defineComponent({
             ctx.fillStyle = "green";
             ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
             ctx.lineTo(end.x, end.y);
-            ctx.fillText(`${end.x}, ${end.y}`, end.x - 20, end.y - 20);
           }
           ctx.stroke();
           if (this.drawDelta) {
@@ -385,8 +382,6 @@ export default defineComponent({
                 line.main_line.delta.y
               );
             }
-            ctx.fillText(`delta ${jj}`, line.main_line.delta.x, line.main_line.delta.y)
-            jj++
           }
         }
 
