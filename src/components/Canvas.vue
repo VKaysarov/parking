@@ -57,6 +57,7 @@ export default defineComponent({
   methods: {
     startDraw(event: MouseEvent) {
       this.indexStartPoint = 0;
+      this.drawDelta = false;
 
       const { lines } = this;
       const id = 0;
@@ -367,21 +368,19 @@ export default defineComponent({
             ctx.lineTo(end.x, end.y);
           }
           ctx.stroke();
-          if (this.drawDelta) {
-            let index = points.findIndex((element, index) => {
-              if (element.joinedDelta) {
-                return index;
-              }
-            })
-            if (index != -1) {
-              this.drawLine(
-                ctx,
-                points[index].x,
-                points[index].y,
-                line.main_line.delta.x,
-                line.main_line.delta.y
-              );
+          let index = points.findIndex((element, index) => {
+            if (element.joinedDelta) {
+              return index;
             }
+          })
+          if (index != -1) {
+            this.drawLine(
+              ctx,
+              points[index].x,
+              points[index].y,
+              line.main_line.delta.x,
+              line.main_line.delta.y
+            );
           }
         }
 
