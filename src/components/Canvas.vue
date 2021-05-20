@@ -57,7 +57,7 @@ export default defineComponent({
     startDraw(event: MouseEvent) {
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
 
-      const lines = this.lines;
+      const { lines } = this;
       const id = 0;
       const x = event.offsetX;
       const y = event.offsetY;
@@ -139,7 +139,7 @@ export default defineComponent({
           this.indexStartPoint++;
           this.lines[0].main_line.points = points;
         }
-        const lines = this.lines;
+        const { lines } = this;
         lines[0].main_line.delta.x = x;
         lines[0].main_line.delta.y = y;
         this.delta = { x, y };
@@ -225,7 +225,7 @@ export default defineComponent({
 
         // Сохранение изменения координат точки
 
-        const lines = this.lines;
+        const { lines } = this;
         const current_line = lines[0].main_line;
         let { points, delta, attributes } = current_line;
 
