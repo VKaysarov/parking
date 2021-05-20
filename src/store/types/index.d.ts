@@ -1,27 +1,23 @@
-type parkingPlaceMetaData = {
+interface IAttributesMainLine {
   parking_size: number;
   disabled: boolean;
 };
 
-type pointCoordinateType = {
-  id: number;
+interface ICoordinates {
   x: number;
   y: number;
 };
 
-type deltaCoordinateType = {
-  x: number;
-  y: number;
+interface IPointCoordinate extends ICoordinates { id: number };
+
+interface IMainLine {
+  points: IPointCoordinate[];
+  delta: ICoordinates;
+  attributes: IAttributesMainLine;
 };
 
-type mainLineType = {
-  points: pointCoordinateType[];
-  delta: deltaCoordinateType;
-  attributes: parkingPlaceMetaData;
+interface ILines {
+  main_line: IMainLine;
 };
 
-type parkingPlaceType = {
-  main_line: mainLineType;
-};
-
-type parkingPlacesArrayType = parkingPlaceType[];
+type parkingPlacesArrayType = ILines[];
