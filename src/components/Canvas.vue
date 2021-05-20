@@ -40,17 +40,20 @@ export default defineComponent({
   name: "Canvas",
   data() {
     return {
-      indexMovePoint: -1,
       indexStartPoint: 0,
       lines: [] as parkingPlacesArrayType,
       moveLine: false,
-      movePoint: false,
       downPoint: false,
       drawDelta: false,
       visibleContextMenu: false,
       delta: { x: -1, y: -1 },
       startDeltaPos: { x: -1, y: -1 },
       selectedPointPos: { x: -1, y: -1 },
+      movePoint: {
+        index: -1,
+        indexLine: -1,
+        state: false,
+      },
     };
   },
   methods: {
@@ -116,7 +119,7 @@ export default defineComponent({
 
       // Выбор точки на линии
       if (this.lines.length > 0 && !this.movePoint) {
-        let indexFoundPoint = this.pointover(x, y);
+        let indexFoundPoint = this.pointover(x, y).indexPoint;
         if (indexFoundPoint != -1) {
           this.selectedPointPos =
             this.lines[0].main_line.points[indexFoundPoint];
@@ -152,9 +155,11 @@ export default defineComponent({
       let x = event.offsetX;
       let y = event.offsetY;
 
-      if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
+      let { indexPoint, indexLine } = this.pointover(x, y)
+      if (this.lines.length > 0 && indexPoint >= 0) {
         this.downPoint = true;
-        this.indexMovePoint = this.pointover(x, y);
+        this.movePoint.index = indexPoint;
+        this.movePoint.indexLine = indexLine;
       }
     },
     mouseupPoint() {
@@ -167,8 +172,8 @@ export default defineComponent({
         this.$store.dispatch("changeAction", "auto");
         this.downPoint = false;
         setTimeout(() => {
-          this.movePoint = false;
-          this.indexMovePoint = -1;
+          this.movePoint.state = false;
+          this.movePoint.index = -1;
         }, 50);
       }
     },
@@ -184,13 +189,12 @@ export default defineComponent({
       // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
         let start = this.lines[this.lines.length - 1].main_line.points[this.indexStartPoint];
-        // console.log(this.lines[this.lines.length - 1].main_line.points);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
 
       // Если мы навелись мышкой на точку
-      if (this.lines.length > 0 && this.pointover(x, y) >= 0) {
+      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       } else {
         this.$store.dispatch("changeAction", "auto");
@@ -202,24 +206,24 @@ export default defineComponent({
 
       // Перетаскивание точки
       if (this.downPoint) {
-        this.movePoint = true;
+        this.movePoint.state = true;
         this.$store.dispatch("changeAction", "movePoint");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
         // Если это первая точка
-        if (this.indexMovePoint === 0) {
-          let start = this.lines[0].main_line.points[this.indexMovePoint + 1];
+        if (this.movePoint.index === 0) {
+          let start = this.lines[this.movePoint.indexLine].main_line.points[this.movePoint.index + 1];
           this.drawLine(ctx, start.x, start.y, x, y);
           // Если это последняя точка
         } else if (
-          this.indexMovePoint ===
-          this.lines[0].main_line.points.length - 1
+          this.movePoint.index ===
+          this.lines[this.movePoint.indexLine].main_line.points.length - 1
         ) {
-          let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
+          let start = this.lines[this.movePoint.indexLine].main_line.points[this.movePoint.index - 1];
           this.drawLine(ctx, start.x, start.y, x, y);
         } else {
-          let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
-          let end = this.lines[0].main_line.points[this.indexMovePoint + 1];
+          let start = this.lines[this.movePoint.indexLine].main_line.points[this.movePoint.index - 1];
+          let end = this.lines[this.movePoint.indexLine].main_line.points[this.movePoint.index + 1];
           ctx.moveTo(start.x, start.y);
           ctx.lineTo(x, y);
           ctx.lineTo(end.x, end.y);
@@ -229,11 +233,11 @@ export default defineComponent({
         // Сохранение изменения координат точки
 
         const { lines } = this;
-        const current_line = lines[0].main_line;
-        let { points, delta, attributes } = current_line;
+        const currentLine = lines[this.movePoint.indexLine].main_line;
+        let { points, delta, attributes } = currentLine;
 
-        points[this.indexMovePoint].x = x;
-        points[this.indexMovePoint].y = y;
+        points[this.movePoint.index].x = x;
+        points[this.movePoint.index].y = y;
         // Если это точка к которой привязана дельта, тогда перемещаем дельту
         if (this.comparisonCordPoints(x, y, this.selectedPointPos.x, this.selectedPointPos.y)) {
           let xSub = x - this.startDeltaPos.x;
@@ -251,7 +255,7 @@ export default defineComponent({
           },
         };
 
-        lines[0] = line;
+        lines[this.movePoint.indexLine] = line;
         this.$store.dispatch("savePoint", lines);
       }
     },
@@ -267,13 +271,15 @@ export default defineComponent({
       return false;
     },
     pointover(mouseX: number, mouseY: number) {
-      for (let [index, point] of this.lines[0].main_line.points.entries()) {
-        // Сравнение координат мыши и точки
-        if (this.comparisonCordPoints(mouseX, mouseY, point.x, point.y)) {
-          return index;
+      for (let [indexLine, line] of this.lines.entries()) {
+        for (let [indexPoint, point] of line.main_line.points.entries()) {
+          // Сравнение координат мыши и точки
+          if (this.comparisonCordPoints(mouseX, mouseY, point.x, point.y)) {
+            return { indexPoint, indexLine };
+          }
         }
       }
-      return -1;
+      return { indexPoint: -1,  indexLine: -1 };
     },
     lineover(mouseX: number, mouseY: number) {
       for (let i = 0; i < this.lines[0].main_line.points.length; i++) {
