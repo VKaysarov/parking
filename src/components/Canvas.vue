@@ -55,6 +55,7 @@ export default defineComponent({
   },
   methods: {
     startDraw(event: MouseEvent) {
+      this.indexStartPoint = 0;
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
 
       const { lines } = this;
@@ -128,20 +129,21 @@ export default defineComponent({
 
       if (this.$store.state.drawLine) {
         // Добавление точек
+        const countLines = this.lines.length;
         if (!this.drawDelta) {
-          const points = this.lines[0].main_line.points;
+          const points = this.lines[countLines - 1].main_line.points;
           const point = {
-            id: this.lines[0].main_line.points.length,
+            id: points.length,
             x,
             y,
           };
           points.push(point);
           this.indexStartPoint++;
-          this.lines[0].main_line.points = points;
+          this.lines[countLines - 1].main_line.points = points;
         }
         const { lines } = this;
-        lines[0].main_line.delta.x = x;
-        lines[0].main_line.delta.y = y;
+        lines[countLines - 1].main_line.delta.x = x;
+        lines[countLines - 1].main_line.delta.y = y;
         this.delta = { x, y };
         this.$store.dispatch("savePoint", lines);
       }
@@ -181,7 +183,8 @@ export default defineComponent({
 
       // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
-        let start = this.lines[0].main_line.points[this.indexStartPoint];
+        let start = this.lines[this.lines.length - 1].main_line.points[this.indexStartPoint];
+        // console.log(this.lines[this.lines.length - 1].main_line.points);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.drawLine(ctx, start.x, start.y, x, y);
       }
@@ -328,21 +331,25 @@ export default defineComponent({
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
-        const start = this.lines[0].main_line.points[0];
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineWidth = 5;
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-        for (let i = 1; i < this.lines[0].main_line.points.length; i++) {
-          const end = this.lines[0].main_line.points[i];
-          ctx.fillStyle = "green";
-          ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-          ctx.lineTo(end.x, end.y);
+
+        for (let line of this.lines) {
+          const points = line.main_line.points;
+          const start = points[0];
+          ctx.beginPath();
+          ctx.moveTo(start.x, start.y);
+          ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
+          for (let i = 1; i < points.length; i++) {
+            const end = points[i];
+            ctx.fillStyle = "green";
+            ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
+            ctx.lineTo(end.x, end.y);
+          }
+          ctx.stroke();
         }
-        ctx.stroke();
 
         if (this.drawDelta) {
           this.drawLine(
