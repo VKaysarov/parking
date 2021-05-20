@@ -47,9 +47,6 @@ export default defineComponent({
       downPoint: false,
       drawDelta: false,
       visibleContextMenu: false,
-      delta: { x: -1, y: -1 },
-      startDeltaPos: { x: -1, y: -1 },
-      selectedPointPos: { x: -1, y: -1 },
       movePoint: {
         index: -1,
         indexLine: -1,
@@ -78,6 +75,10 @@ export default defineComponent({
           delta: {
             x: 0,
             y: 0,
+            len: {
+              x: 0,
+              y: 0,
+            }
           },
           attributes: {
             parking_size: 0,
@@ -119,7 +120,6 @@ export default defineComponent({
         let {indexPoint, indexLine} = this.pointover(x, y);
         if (indexPoint != -1) {
           this.lines[indexLine].main_line.points[indexPoint].joinedDelta = true;
-          this.startDeltaPos = { x, y };
           this.indexStartPoint = indexPoint;
           this.indexStartLine = indexLine;
           this.$store.dispatch("startDraw");
@@ -143,9 +143,17 @@ export default defineComponent({
           this.lines[countLines - 1].main_line.points = points;
         }
         const { lines } = this;
-        lines[this.indexStartLine].main_line.delta.x = x;
-        lines[this.indexStartLine].main_line.delta.y = y;
-        this.delta = { x, y };
+        const pointStart = lines[this.indexStartLine].main_line.points[this.indexStartPoint];
+        const delta = {
+          x,
+          y,
+          len: {
+            x: pointStart.x - x,
+            y: pointStart.y - y
+          }
+        }
+        lines[this.indexStartLine].main_line.delta = delta;
+
         this.$store.dispatch("savePoint", lines);
       }
     },
@@ -238,11 +246,10 @@ export default defineComponent({
         })
         // Если это точка к которой привязана дельта, тогда перемещаем дельту
         if (index != -1 && this.comparisonCordPoints(x, y, points[index].x, points[index].y)) {
-          let xSub = x - this.startDeltaPos.x;
-          let ySub = y - this.startDeltaPos.y;
           delta = {
-            x: this.delta.x + xSub,
-            y: this.delta.y + ySub,
+            x: x - delta.len.x,
+            y: y - delta.len.y,
+            len: delta.len
           };
         }
 

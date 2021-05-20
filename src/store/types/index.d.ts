@@ -8,6 +8,10 @@ interface ICoordinates {
   y: number;
 };
 
+interface IDelta extends ICoordinates {
+  len: ICoordinates;
+};
+
 interface IPointCoordinate extends ICoordinates {
   id: number;
   joinedDelta: boolean;
@@ -15,7 +19,7 @@ interface IPointCoordinate extends ICoordinates {
 
 interface IMainLine {
   points: IPointCoordinate[];
-  delta: ICoordinates;
+  delta: IDelta;
   attributes: IAttributesMainLine;
 };
 
