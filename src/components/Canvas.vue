@@ -204,12 +204,12 @@ export default defineComponent({
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
         // Если это первая точка
-        if (this.indexMovePoint == 0) {
+        if (this.indexMovePoint === 0) {
           let start = this.lines[0].main_line.points[this.indexMovePoint + 1];
           this.drawLine(ctx, start.x, start.y, x, y);
           // Если это последняя точка
         } else if (
-          this.indexMovePoint ==
+          this.indexMovePoint ===
           this.lines[0].main_line.points.length - 1
         ) {
           let start = this.lines[0].main_line.points[this.indexMovePoint - 1];
@@ -277,7 +277,7 @@ export default defineComponent({
         // Сравнение координат мыши и линии
         let startPoint = { id: 0, x: 0, y: 0 };
         let endPoint = { id: 0, x: 0, y: 0 };
-        if (i == this.lines[0].main_line.points.length - 1) {
+        if (i === this.lines[0].main_line.points.length - 1) {
           startPoint = this.lines[0].main_line.points[i - 1];
           endPoint = this.lines[0].main_line.points[i];
         } else {
