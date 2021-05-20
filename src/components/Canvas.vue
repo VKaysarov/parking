@@ -100,19 +100,17 @@ export default defineComponent({
       let y = event.offsetY;
 
       // Добавление точки на линию
-      if (
-        this.$store.state.addPoint &&
-        this.lines[0].main_line.points.length > 1
-      ) {
-        const indexLine = this.lineover(x, y);
-        const points = this.lines[0].main_line.points;
+
+      if (this.$store.state.addPoint) {
+        const { indexLine, indexPoint } = this.lineover(x, y);
+        const points = this.lines[indexLine].main_line.points;
         const point = {
-          id: this.lines[0].main_line.points.length,
+          id: points.length,
           x,
           y,
         };
-        points.splice(indexLine, 0, point);
-        this.lines[0].main_line.points = points;
+        points.splice(indexPoint, 0, point);
+        this.lines[indexLine].main_line.points = points;
         this.$store.dispatch("savePoint", this.lines);
         return "Add point";
       }
@@ -281,44 +279,47 @@ export default defineComponent({
       }
       return { indexPoint: -1,  indexLine: -1 };
     },
+    // Сравнение координат мыши и линии
     lineover(mouseX: number, mouseY: number) {
-      for (let i = 0; i < this.lines[0].main_line.points.length; i++) {
-        // Сравнение координат мыши и линии
-        let startPoint = { id: 0, x: 0, y: 0 };
-        let endPoint = { id: 0, x: 0, y: 0 };
-        if (i === this.lines[0].main_line.points.length - 1) {
-          startPoint = this.lines[0].main_line.points[i - 1];
-          endPoint = this.lines[0].main_line.points[i];
-        } else {
-          startPoint = this.lines[0].main_line.points[i];
-          endPoint = this.lines[0].main_line.points[i + 1];
-        }
-        if (
-          // Если линия направлена в правый нижний угол
-          (mouseX > startPoint.x &&
-            mouseX < endPoint.x &&
-            mouseY > startPoint.y &&
-            mouseY < endPoint.y) ||
-          // Если линия направлена в левый верхний угол
-          (mouseX < startPoint.x &&
-            mouseX > endPoint.x &&
-            mouseY < startPoint.y &&
-            mouseY > endPoint.y) ||
-          // Если линия направлена в правый верхний угол
-          (mouseX > startPoint.x &&
-            mouseX < endPoint.x &&
-            mouseY < startPoint.y &&
-            mouseY > endPoint.y) ||
-          // Если линия направлена в левый нижний угол
-          (mouseX < startPoint.x &&
-            mouseX > endPoint.x &&
-            mouseY > startPoint.y &&
-            mouseY < endPoint.y)
-        ) {
-          return i + 1;
+      for (let [indexLine, line] of this.lines.entries()) {
+        let points = line.main_line.points
+        for (let i = 0; i < points.length; i++) {
+          let startPoint = { id: 0, x: 0, y: 0 };
+          let endPoint = { id: 0, x: 0, y: 0 };
+          if (i === points.length - 1) {
+            startPoint = points[i - 1];
+            endPoint = points[i];
+          } else {
+            startPoint = points[i];
+            endPoint = points[i + 1];
+          }
+          if (
+            // Если линия направлена в правый нижний угол
+            (mouseX > startPoint.x &&
+              mouseX < endPoint.x &&
+              mouseY > startPoint.y &&
+              mouseY < endPoint.y) ||
+            // Если линия направлена в левый верхний угол
+            (mouseX < startPoint.x &&
+              mouseX > endPoint.x &&
+              mouseY < startPoint.y &&
+              mouseY > endPoint.y) ||
+            // Если линия направлена в правый верхний угол
+            (mouseX > startPoint.x &&
+              mouseX < endPoint.x &&
+              mouseY < startPoint.y &&
+              mouseY > endPoint.y) ||
+            // Если линия направлена в левый нижний угол
+            (mouseX < startPoint.x &&
+              mouseX > endPoint.x &&
+              mouseY > startPoint.y &&
+              mouseY < endPoint.y)
+          ) {
+            return { indexLine, indexPoint: i + 1 };
+          }
         }
       }
-      return -1;
+      return { indexLine: -1, indexPoint: -1 };
     },
     endDraw(event: MouseEvent) {
       event.preventDefault();
@@ -385,6 +386,14 @@ export default defineComponent({
   },
   mounted() {
     this.draw();
+    addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.ctrlKey) {
+        this.$store.dispatch("addPoint");
+      }
+    });
+    addEventListener('keyup', (event: KeyboardEvent) => {
+      this.$store.dispatch("addPoint");
+    });
   },
 });
 </script>
