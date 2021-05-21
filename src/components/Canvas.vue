@@ -41,6 +41,7 @@ export default defineComponent({
   data() {
     return {
       indexStartLine: 0,
+      indexDeltaLine: -1,
       indexStartPoint: 0,
       lines: [] as parkingPlacesArrayType,
       moveLine: false,
@@ -168,6 +169,12 @@ export default defineComponent({
         this.movePoint.index = indexPoint;
         this.movePoint.indexLine = indexLine;
       }
+
+      for (let [index, line] of this.lines.entries()) {
+        if (this.comparisonCordPoints(x, y, line.main_line.delta.x, line.main_line.delta.y)) {
+          this.indexDeltaLine = index;
+        }
+      }
     },
     mouseupPoint() {
       if (this.downPoint) {
@@ -177,6 +184,10 @@ export default defineComponent({
           this.movePoint.state = false;
           this.movePoint.index = -1;
         }, 50);
+      }
+
+      if (this.indexDeltaLine != -1) {
+        this.indexDeltaLine = -1;
       }
     },
     mousemove(event: MouseEvent) {
@@ -263,6 +274,30 @@ export default defineComponent({
         };
 
         lines[this.movePoint.indexLine] = line;
+        this.$store.dispatch("savePoint", lines);
+      }
+
+      // Перетаскивание дельты
+      if (this.indexDeltaLine != -1) {
+        this.$store.dispatch("changeAction", "movePoint");
+        const { lines } = this;
+        const line = lines[this.indexDeltaLine].main_line;
+        const points = line.points;
+        let index = points.findIndex((element, index) => {
+          if (element.joinedDelta) {
+            return index;
+          }
+        })
+        const pointJoined = points[index]; 
+        const delta = {
+          x,
+          y,
+          len: {
+            x: pointJoined.x - x,
+            y: pointJoined.y - y,
+          }
+        }
+        line.delta = delta
         this.$store.dispatch("savePoint", lines);
       }
     },
@@ -383,7 +418,6 @@ export default defineComponent({
             );
           }
         }
-
       }
 
       requestAnimationFrame(this.draw);
