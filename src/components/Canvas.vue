@@ -253,7 +253,7 @@ export default defineComponent({
         points[this.movePoint.index].y = y;
         let index = points.findIndex((element, index) => {
           if (element.joinedDelta) {
-            return index;
+            return {index};
           }
         })
         // Если это точка к которой привязана дельта, тогда перемещаем дельту
@@ -285,7 +285,7 @@ export default defineComponent({
         const points = line.points;
         let index = points.findIndex((element, index) => {
           if (element.joinedDelta) {
-            return index;
+            return {index};
           }
         })
         const pointJoined = points[index]; 
@@ -398,9 +398,9 @@ export default defineComponent({
           const points = line.main_line.points;
           const start = points[0];
           ctx.beginPath();
-          ctx.moveTo(start.x, start.y);
+          // ctx.moveTo(start.x, start.y);
           ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-          for (let i = 1; i < points.length; i++) {
+          for (let i = 0; i < points.length; i++) {
             const end = points[i];
             ctx.fillStyle = "green";
             ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
@@ -423,7 +423,7 @@ export default defineComponent({
 
           let index = points.findIndex((element, index) => {
             if (element.joinedDelta) {
-              return index;
+              return {index};
             }
           })
           if (index != -1) {
