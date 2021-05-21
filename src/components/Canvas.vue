@@ -405,7 +405,6 @@ export default defineComponent({
           const points = line.main_line.points;
           const start = points[0];
           ctx.beginPath();
-          // ctx.moveTo(start.x, start.y);
           ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
           for (let i = 0; i < points.length; i++) {
             const end = points[i];
@@ -433,7 +432,10 @@ export default defineComponent({
               return {index};
             }
           })
+          // Отрисовка дельты
           if (index != -1) {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "chartreuse"
             this.drawLine(
               ctx,
               points[index].x,
