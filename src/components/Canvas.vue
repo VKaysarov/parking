@@ -381,7 +381,11 @@ export default defineComponent({
 
       const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const canvasFill = document.querySelector("#canvasFill") as HTMLCanvasElement;
+      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
+      canvasFill.width = canvasFill.offsetWidth;
+      canvasFill.height = canvasFill.offsetHeight;
       canvas.width = canvas.offsetWidth;
       canvas.height = canvas.offsetHeight;
       // Отрисовка всех точек и линий
@@ -403,6 +407,20 @@ export default defineComponent({
             ctx.lineTo(end.x, end.y);
           }
           ctx.stroke();
+
+          ctxFill.beginPath();
+          ctxFill.moveTo(start.x, start.y);
+          for (let i = 0; i < points.length; i++) {
+            const end = points[i];
+            ctxFill.fillStyle = "rgba(0, 200, 200, .5)";
+            ctxFill.lineTo(end.x - line.main_line.delta.len.x, end.y - line.main_line.delta.len.y);
+          }
+          for (let i = points.length - 1; i >= 0; i--) {
+            const end = points[i];
+            ctxFill.lineTo(end.x + line.main_line.delta.len.x, end.y + line.main_line.delta.len.y);
+          }
+          ctxFill.fill();
+
           let index = points.findIndex((element, index) => {
             if (element.joinedDelta) {
               return index;
@@ -415,6 +433,18 @@ export default defineComponent({
               points[index].y,
               line.main_line.delta.x,
               line.main_line.delta.y
+            );
+            ctx.fillRect(line.main_line.delta.x - 5, line.main_line.delta.y - 5, 10, 10);
+            const delta = {
+              x: points[index].x + line.main_line.delta.len.x,
+              y: points[index].y + line.main_line.delta.len.y,
+            }
+            this.drawLine(
+              ctx,
+              points[index].x,
+              points[index].y,
+              delta.x,
+              delta.y
             );
           }
         }
