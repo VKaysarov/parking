@@ -17,8 +17,7 @@
       width="800"
       height="800"
       @click="handleClick"
-      @dblclick="startDraw"
-      @contextmenu="endDraw"
+      @dblclick="endDraw"
       @mousemove="mousemove"
       @mousedown="mousedownPoint"
       @mouseup="mouseupPoint"
@@ -129,9 +128,14 @@ export default defineComponent({
         }
       }
 
+      if (this.lines.length == 0) {
+        this.startDraw(event)
+      }
+
       if (this.$store.state.drawLine) {
         // Добавление точек
         const countLines = this.lines.length;
+
         if (!this.drawDelta) {
           const points = this.lines[countLines - 1].main_line.points;
           const point = {
@@ -376,6 +380,9 @@ export default defineComponent({
       this.$store.dispatch("endDraw");
       this.indexStartLine++;
     },
+    submitData() {
+      this.visibleContextMenu = false;
+    },
     draw() {
       this.lines = this.$store.state.lines;
 
@@ -402,7 +409,7 @@ export default defineComponent({
           ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
           for (let i = 0; i < points.length; i++) {
             const end = points[i];
-            ctx.fillStyle = "green";
+            ctx.fillStyle = "blue";
             ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
             ctx.lineTo(end.x, end.y);
           }
@@ -475,6 +482,12 @@ export default defineComponent({
     addEventListener('keyup', (event: KeyboardEvent) => {
       if (event.key === "Control") {
         this.$store.dispatch("addPoint");
+      }
+    });
+    addEventListener('keypress', (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault()
+        this.submitData()
       }
     });
   },
