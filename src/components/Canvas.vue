@@ -154,7 +154,6 @@ export default defineComponent({
       }
 
       // Начало отрисовки основной линии
-      console.log(this.indexStartLine, this.lines.length)
       if (this.indexStartLine === this.lines.length && this.$store.state.action != "movePoint") {
         this.startDraw(event);
         return "Start drawing";
@@ -429,6 +428,10 @@ export default defineComponent({
       contextMenu.style.top = `${event.offsetY}px`;
       this.$store.dispatch("endDraw");
       this.indexStartLine++;
+
+      const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
     submitData() {
       this.visibleContextMenu = false;
@@ -552,8 +555,12 @@ export default defineComponent({
         this.$store.dispatch("addPoint");
       }
       if (event.key === "Escape") {
-        this.$store.dispatch("endDraw");
         this.indexStartLine++;
+        this.$store.dispatch("endDraw");
+
+        const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
     });
     addEventListener("keypress", (event: KeyboardEvent) => {
