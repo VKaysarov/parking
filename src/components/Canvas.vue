@@ -111,12 +111,10 @@ export default defineComponent({
       this.$store.dispatch("startDraw");
     },
     handleClick(event: MouseEvent) {
-      event.stopImmediatePropagation();
       this.visibleContextMenu = false;
 
       let x = event.offsetX;
       let y = event.offsetY;
-
 
       // Добавление точки на линию
       if (this.$store.state.addPoint) {
@@ -142,52 +140,45 @@ export default defineComponent({
         let { indexPoint, indexLine } = this.pointover(x, y);
         if (indexPoint != -1) {
           let { lines } = this;
-          lines[indexLine].main_line.points[indexPoint].joinedDelta = true;
-          lines[indexLine].main_line.delta.x = x - 50;
-          lines[indexLine].main_line.delta.y = y - 50;
+          let currentLine = lines[indexLine].main_line;
+          
+          for (let point of currentLine.points) {
+            point.joinedDelta = false
+          }
+
+          currentLine.points[indexPoint].joinedDelta = true;
+          currentLine.delta.x = x - 50;
+          currentLine.delta.y = y - 50;
+
           this.indexStartPoint = indexPoint;
           this.indexStartLine = indexLine;
-          this.$store.dispatch("startDraw");
           this.drawDelta = true;
+
           return "Selected";
         }
       }
 
       // Начало отрисовки основной линии
-      if (this.indexStartLine === this.lines.length && this.$store.state.action != "movePoint") {
+      if (!this.$store.state.drawLine && this.$store.state.action != "movePoint") {
         this.startDraw(event);
+        this.indexStartLine = this.lines.length - 1;
         return "Start drawing";
       }
 
+      // Рисование линии
       if (this.$store.state.drawLine) {
-        // Добавление точек
         const { lines } = this;
         const countLines = lines.length;
-
-        if (!this.drawDelta) {
-          const points = this.lines[countLines - 1].main_line.points;
-          const point = {
-            id: points.length,
-            x,
-            y,
-            joinedDelta: false,
-          };
-          points.push(point);
-          this.indexStartPoint++;
-          this.lines[countLines - 1].main_line.points = points;
-        } else {
-          const pointStart =
-            lines[this.indexStartLine].main_line.points[this.indexStartPoint];
-          const delta = {
-            x,
-            y,
-            len: {
-              x: pointStart.x - x,
-              y: pointStart.y - y,
-            },
-          };
-          lines[this.indexStartLine].main_line.delta = delta;
-        }
+        const points = this.lines[countLines - 1].main_line.points;
+        const point = {
+          id: points.length,
+          x,
+          y,
+          joinedDelta: false,
+        };
+        points.push(point);
+        this.indexStartPoint++;
+        this.lines[countLines - 1].main_line.points = points;
 
         this.$store.dispatch("savePoint", lines);
       }
@@ -267,40 +258,8 @@ export default defineComponent({
         this.$store.dispatch("changeAction", "movePoint");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
-        // Если это первая точка
-        if (this.movePoint.index === 0) {
-          let start =
-            this.lines[this.movePoint.indexLine].main_line.points[
-              this.movePoint.index + 1
-            ];
-          this.drawLine(ctx, start.x, start.y, x, y);
-          // Если это последняя точка
-        } else if (
-          this.movePoint.index ===
-          this.lines[this.movePoint.indexLine].main_line.points.length - 1
-        ) {
-          let start =
-            this.lines[this.movePoint.indexLine].main_line.points[
-              this.movePoint.index - 1
-            ];
-          this.drawLine(ctx, start.x, start.y, x, y);
-        } else {
-          let start =
-            this.lines[this.movePoint.indexLine].main_line.points[
-              this.movePoint.index - 1
-            ];
-          let end =
-            this.lines[this.movePoint.indexLine].main_line.points[
-              this.movePoint.index + 1
-            ];
-          ctx.moveTo(start.x, start.y);
-          ctx.lineTo(x, y);
-          ctx.lineTo(end.x, end.y);
-          ctx.stroke();
-        }
 
         // Сохранение изменения координат точки
-
         const { lines } = this;
         const currentLine = lines[this.movePoint.indexLine].main_line;
         let { points, delta, attributes } = currentLine;
@@ -564,21 +523,22 @@ export default defineComponent({
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
-    });
-    addEventListener("keypress", (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        this.submitData();
-      }
       if (event.key === "Delete") {
-        if (this.lines.length > 0) {
-          this.lines[this.indexStartLine].main_line.points.splice(this.indexStartPoint, 1);
-          this.indexStartPoint = this.lines[this.indexStartLine].main_line.points.length - 1;
+        let currentLine = this.lines[this.indexStartLine].main_line;
+        if (currentLine.points.length > 0) {
+          currentLine.points.splice(this.indexStartPoint, 1);
+          this.indexStartPoint = currentLine.points.length - 1;
           if (this.indexStartPoint === -1) {
             this.lines.splice(this.indexStartLine, 1);
             this.$store.dispatch("endDraw");
           }
         }
+      }
+    });
+    addEventListener("keypress", (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        this.submitData();
       }
     });
   },
