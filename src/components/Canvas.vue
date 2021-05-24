@@ -198,7 +198,8 @@ export default defineComponent({
     mousedownPoint(event: MouseEvent) {
       let x = event.offsetX;
       let y = event.offsetY;
-
+      
+      // Нажатие на точку
       let { indexPoint, indexLine } = this.pointover(x, y);
       if (this.lines.length > 0 && indexPoint >= 0) {
         this.downPoint = true;
@@ -206,6 +207,7 @@ export default defineComponent({
         this.movePoint.indexLine = indexLine;
       }
 
+      // Нажатие на дельту
       for (let [index, line] of this.lines.entries()) {
         if (
           this.comparisonCordPoints(
@@ -260,7 +262,7 @@ export default defineComponent({
       }
 
       // Перетаскивание точки
-      if (this.downPoint) {
+      if (this.downPoint && !this.$store.state.drawLine) {
         this.movePoint.state = true;
         this.$store.dispatch("changeAction", "movePoint");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
