@@ -88,12 +88,12 @@ export default defineComponent({
               id,
               x,
               y,
-              joinedDelta: false,
+              joinedDelta: true,
             },
           ],
           delta: {
-            x: 0,
-            y: 0,
+            x: x - 50,
+            y: y - 50,
             len: {
               x: 50,
               y: 50,
@@ -246,6 +246,19 @@ export default defineComponent({
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       } else {
         this.$store.dispatch("changeAction", "auto");
+      }
+
+      for (let [index, line] of this.lines.entries()) {
+        if (
+          this.comparisonCordPoints(
+            x,
+            y,
+            line.main_line.delta.x,
+            line.main_line.delta.y
+          )
+        ) {
+          this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
+        }
       }
 
       if (this.$store.state.addPoint) {
