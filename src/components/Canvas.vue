@@ -136,7 +136,6 @@ export default defineComponent({
 
       // Выбор точки на линии
       if (
-        this.lines.length > 0 &&
         this.$store.state.action != "movePoint" &&
         !this.$store.state.drawLine
       ) {
@@ -155,6 +154,7 @@ export default defineComponent({
       }
 
       // Начало отрисовки основной линии
+      console.log(this.indexStartLine, this.lines.length)
       if (this.indexStartLine === this.lines.length && this.$store.state.action != "movePoint") {
         this.startDraw(event);
         return "Start drawing";
@@ -565,6 +565,10 @@ export default defineComponent({
         if (this.lines.length > 0) {
           this.lines[this.indexStartLine].main_line.points.splice(this.indexStartPoint, 1);
           this.indexStartPoint = this.lines[this.indexStartLine].main_line.points.length - 1;
+          if (this.indexStartPoint === -1) {
+            this.lines.splice(this.indexStartLine, 1);
+            this.$store.dispatch("endDraw");
+          }
         }
       }
     });
