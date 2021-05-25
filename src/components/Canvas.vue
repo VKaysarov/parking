@@ -49,30 +49,6 @@ export default defineComponent({
     };
   },
   methods: {
-    // createClicker(clickFn: void, dblClickFn: void) {
-    //   const doubleClickThreshold = 250;
-    //   let timer;
-
-    //   return function (event: MouseEvent) {
-    //     const context = this as any;
-
-    //     if (timer) {
-    //       clearTimeout(timer);
-    //       dblClickFn.call(context, event);
-    //       timer = null;
-    //       return;
-    //     }
-
-    //     timer = setTimeout(
-    //       function (ctx) {
-    //         timer = null;
-    //         clickFn.call(ctx, event);
-    //       },
-    //       doubleClickThreshold,
-    //       context
-    //     );
-    //   };
-    // },
     startDraw(event: MouseEvent) {
       this.indexStartPoint = 0;
       this.drawDelta = false;
@@ -111,7 +87,6 @@ export default defineComponent({
       this.$store.dispatch("startDraw");
     },
     handleClick(event: MouseEvent) {
-      this.visibleContextMenu = false;
 
       let x = event.offsetX;
       let y = event.offsetY;
@@ -141,14 +116,15 @@ export default defineComponent({
         if (indexPoint != -1) {
           let { lines } = this;
           let currentLine = lines[indexLine].main_line;
-          
+          let delta = currentLine.delta
+
           for (let point of currentLine.points) {
             point.joinedDelta = false
           }
 
           currentLine.points[indexPoint].joinedDelta = true;
-          currentLine.delta.x = x - 50;
-          currentLine.delta.y = y - 50;
+          delta.x = x - delta.len.x;
+          delta.y = y - delta.len.y;
 
           this.indexStartPoint = indexPoint;
           this.indexStartLine = indexLine;
@@ -159,11 +135,12 @@ export default defineComponent({
       }
 
       // Начало отрисовки основной линии
-      if (!this.$store.state.drawLine && this.$store.state.action != "movePoint") {
+      if (!this.$store.state.drawLine && this.$store.state.action != "movePoint" && !this.visibleContextMenu) {
         this.startDraw(event);
         this.indexStartLine = this.lines.length - 1;
         return "Start drawing";
       }
+      this.visibleContextMenu = false;
 
       // Рисование линии
       if (this.$store.state.drawLine) {
@@ -257,7 +234,7 @@ export default defineComponent({
             line.main_line.delta.y
           )
         ) {
-          this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
+          this.$store.dispatch("changeAction", "pointerPoint");
         }
       }
 
