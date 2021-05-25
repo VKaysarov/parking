@@ -432,24 +432,23 @@ export default defineComponent({
 
           if (line.main_line.attributes.selected) {
             // Отрисовка основных линий и точек
-            ctx.strokeStyle = "black";
             ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
+            ctx.strokeStyle = "black";
             for (let i = 0; i < points.length; i++) {
               const end = points[i];
               ctx.fillStyle = "blue";
-              ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-              ctx.lineTo(end.x, end.y);
+              const circle = new Path2D();
+              circle.arc(end.x, end.y, 5, 0, 2 * Math.PI);
+              ctx.fill(circle);
+              ctx.lineTo(end.x, end.y); 
             }
             ctx.stroke();
           }
 
           // Отрисовка области вокруг линии
-          // ctxFill.beginPath();
           let path = new Path2D();
           line.main_line.attributes.path = path;
-          // ctxFill.moveTo(start.x, start.y);
           for (let i = 0; i < points.length; i++) {
             const end = points[i];
             ctxFill.fillStyle = "rgba(0, 200, 200, .5)";
@@ -488,12 +487,10 @@ export default defineComponent({
                 line.main_line.delta.x,
                 line.main_line.delta.y
               );
-              ctx.fillRect(
-                line.main_line.delta.x - 5,
-                line.main_line.delta.y - 5,
-                10,
-                10
-              );
+              // Рисование точки дельты
+              const circle = new Path2D();
+              circle.arc(line.main_line.delta.x, line.main_line.delta.y, 5, 0, 2 * Math.PI);
+              ctx.fill(circle);
               // Отражение линии дельты
               const delta = {
                 x: points[index].x + line.main_line.delta.len.x,
