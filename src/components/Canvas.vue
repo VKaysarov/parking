@@ -39,7 +39,6 @@ export default defineComponent({
       lines: [] as parkingPlacesArrayType,
       moveLine: false,
       downPoint: false,
-      drawDelta: false,
       visibleContextMenu: false,
       movePoint: {
         index: -1,
@@ -51,7 +50,6 @@ export default defineComponent({
   methods: {
     startDraw(event: MouseEvent) {
       this.indexStartPoint = 0;
-      this.drawDelta = false;
 
       const { lines } = this;
       const id = 0;
@@ -131,7 +129,6 @@ export default defineComponent({
 
           this.indexStartPoint = indexPoint;
           this.indexStartLine = indexLine;
-          this.drawDelta = true;
 
           return "Selected";
         }
