@@ -78,6 +78,8 @@ export default defineComponent({
           attributes: {
             parking_size: 0,
             disabled: false,
+            selected: true,
+            path: {} as Path2D,
           },
         },
       };
@@ -123,6 +125,7 @@ export default defineComponent({
           }
 
           currentLine.points[indexPoint].joinedDelta = true;
+          currentLine.attributes.selected = true;
           delta.x = x - delta.len.x;
           delta.y = y - delta.len.y;
 
@@ -131,6 +134,23 @@ export default defineComponent({
           this.drawDelta = true;
 
           return "Selected";
+        }
+      }
+
+      if (this.lines.length > 0 && !this.$store.state.drawLine && this.$store.state.action != "movePoint") {
+        for (let line of this.lines) {
+          line.main_line.attributes.selected = false;
+        }
+      }
+
+      const canvasFill = document.querySelector(
+        "#canvasFill"
+      ) as HTMLCanvasElement;
+      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
+      for (let line of this.lines) {
+        if (ctxFill.isPointInPath(line.main_line.attributes.path, x, y)) {
+          line.main_line.attributes.selected = true;
+          return "Selected Line";
         }
       }
 
@@ -219,10 +239,9 @@ export default defineComponent({
       }
 
       // Если мы навелись мышкой на точку
+      this.$store.dispatch("changeAction", "auto");
       if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
-      } else {
-        this.$store.dispatch("changeAction", "auto");
       }
 
       for (let [index, line] of this.lines.entries()) {
@@ -370,7 +389,8 @@ export default defineComponent({
     },
     endDraw(event: MouseEvent) {
       event.preventDefault();
-      event.stopImmediatePropagation();
+      // this.lines[this.indexStartLine].main_line.attributes.selected = false;
+      // this.$store.dispatch("savePoint", this.lines);
       this.visibleContextMenu = true;
       const contextMenu = document.querySelector(
         "#context-menu"
@@ -409,72 +429,83 @@ export default defineComponent({
         for (let line of this.lines) {
           const points = line.main_line.points;
           const start = points[0];
-          ctx.strokeStyle = "black";
-          ctx.lineWidth = 5;
-          ctx.beginPath();
-          ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-          for (let i = 0; i < points.length; i++) {
-            const end = points[i];
-            ctx.fillStyle = "blue";
-            ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-            ctx.lineTo(end.x, end.y);
-          }
-          ctx.stroke();
 
-          ctxFill.beginPath();
-          ctxFill.moveTo(start.x, start.y);
+          if (line.main_line.attributes.selected) {
+            // Отрисовка основных линий и точек
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
+            for (let i = 0; i < points.length; i++) {
+              const end = points[i];
+              ctx.fillStyle = "blue";
+              ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
+              ctx.lineTo(end.x, end.y);
+            }
+            ctx.stroke();
+          }
+
+          // Отрисовка области вокруг линии
+          // ctxFill.beginPath();
+          let path = new Path2D();
+          line.main_line.attributes.path = path;
+          // ctxFill.moveTo(start.x, start.y);
           for (let i = 0; i < points.length; i++) {
             const end = points[i];
             ctxFill.fillStyle = "rgba(0, 200, 200, .5)";
-            ctxFill.lineTo(
+            path.lineTo(
               end.x - line.main_line.delta.len.x,
               end.y - line.main_line.delta.len.y
             );
           }
           for (let i = points.length - 1; i >= 0; i--) {
             const end = points[i];
-            ctxFill.lineTo(
+            path.lineTo(
               end.x + line.main_line.delta.len.x,
               end.y + line.main_line.delta.len.y
             );
           }
-          ctxFill.fill();
+          ctxFill.fill(path);
 
-          let index = points.findIndex((element, index) => {
-            if (element.joinedDelta) {
-              return { index };
+          if (line.main_line.attributes.selected) {
+            // Отрисовка дельты
+            let index = points.findIndex((element, index) => {
+              if (element.joinedDelta) {
+                return { index };
+              }
+            });
+            
+            if (index === -1) {
+              return "Delta not found";
             }
-          });
-          // Отрисовка дельты
-          if (index != -1) {
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "chartreuse";
-            // Рисование основной линии дельты
-            this.drawLine(
-              ctx,
-              points[index].x,
-              points[index].y,
-              line.main_line.delta.x,
-              line.main_line.delta.y
-            );
-            ctx.fillRect(
-              line.main_line.delta.x - 5,
-              line.main_line.delta.y - 5,
-              10,
-              10
-            );
-            // Отражение линии дельты
-            const delta = {
-              x: points[index].x + line.main_line.delta.len.x,
-              y: points[index].y + line.main_line.delta.len.y,
-            };
-            this.drawLine(
-              ctx,
-              points[index].x,
-              points[index].y,
-              delta.x,
-              delta.y
-            );
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = "chartreuse";
+              // Рисование основной линии дельты
+              this.drawLine(
+                ctx,
+                points[index].x,
+                points[index].y,
+                line.main_line.delta.x,
+                line.main_line.delta.y
+              );
+              ctx.fillRect(
+                line.main_line.delta.x - 5,
+                line.main_line.delta.y - 5,
+                10,
+                10
+              );
+              // Отражение линии дельты
+              const delta = {
+                x: points[index].x + line.main_line.delta.len.x,
+                y: points[index].y + line.main_line.delta.len.y,
+              };
+              this.drawLine(
+                ctx,
+                points[index].x,
+                points[index].y,
+                delta.x,
+                delta.y
+              );
           }
         }
       }

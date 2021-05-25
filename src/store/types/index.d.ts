@@ -1,6 +1,8 @@
 interface IAttributesMainLine {
   parking_size: number;
   disabled: boolean;
+  selected: boolean;
+  path: Path2D;
 }
 
 interface ICoordinates {
