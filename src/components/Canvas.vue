@@ -1,23 +1,24 @@
 <template>
   <div>
-    <canvas id="canvasFill" width="800" height="800"
+    <canvas id="canvasFill" ref="canvasFill" width="800" height="800"
       >Not supported Canvas</canvas
     >
-    <canvas id="canvasAnim" width="800" height="800"
+    <canvas id="canvasAnim" ref="canvasAnim" width="800" height="800"
       >Not supported Canvas</canvas
     >
     <canvas
       id="canvas"
+      ref="canvas"
       width="800"
       height="800"
       @click="handleClick"
-      @contextmenu="endDraw"
+      @contextmenu.prevent="endDraw"
       @mousemove="mousemove"
       @mousedown="mousedownPoint"
       @mouseup="mouseupPoint"
       >Not supported Canvas</canvas
     >
-    <form id="context-menu" :class="{ isVisible: visibleContextMenu }">
+    <form ref="contextMenu" v-show="visibleContextMenu">
       <div>
         <label>Введите число парковочных мест: </label>
         <input type="text" />
@@ -28,6 +29,8 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { animationDrawingLine, dragPoint, dragDelta } from "./CanvasMousemove";
+import { addPointOnLine, selectPointOnLine, drawLine } from "./CanvasHandleClick";
 
 export default defineComponent({
   name: "Canvas",
@@ -49,8 +52,6 @@ export default defineComponent({
   },
   methods: {
     startDraw(event: MouseEvent) {
-      this.indexStartPoint = 0;
-
       const { lines } = this;
       const id = 0;
       const x = event.offsetX;
@@ -83,107 +84,69 @@ export default defineComponent({
       };
 
       lines.push(line);
-      this.$store.dispatch("savePoint", lines);
+      this.indexStartPoint = 0;
       this.$store.dispatch("startDraw");
+      this.$store.dispatch("savePoint", lines);
     },
     handleClick(event: MouseEvent) {
+      const x = event.offsetX;
+      const y = event.offsetY;
 
-      let x = event.offsetX;
-      let y = event.offsetY;
+      const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
+      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
-      // Добавление точки на линию
-      if (this.$store.state.addPoint) {
-        const { indexLine, indexPoint } = this.lineover(x, y);
-        const points = this.lines[indexLine].main_line.points;
-        const point = {
-          id: points.length,
-          x,
-          y,
-          joinedDelta: false,
-        };
-        points.splice(indexPoint, 0, point);
-        this.lines[indexLine].main_line.points = points;
-        this.$store.dispatch("savePoint", this.lines);
-        return "Add point";
+      // Добавление точки на линии
+      if (this.$store.state.action == "addPoint") {
+        addPointOnLine(this, x, y);
       }
 
-      // Выбор точки на линии
       if (
-        this.$store.state.action != "movePoint" &&
-        !this.$store.state.drawLine
+        this.lines.length > 0 &&
+        !this.$store.state.drawLine &&
+        this.$store.state.action != "movePoint"
       ) {
-        let { indexPoint, indexLine } = this.pointover(x, y);
-        if (indexPoint != -1) {
-          let { lines } = this;
-          let currentLine = lines[indexLine].main_line;
-          let delta = currentLine.delta
-
-          for (let point of currentLine.points) {
-            point.joinedDelta = false
-          }
-
-          currentLine.points[indexPoint].joinedDelta = true;
-          currentLine.attributes.selected = true;
-          delta.x = x - delta.len.x;
-          delta.y = y - delta.len.y;
-
-          this.indexStartPoint = indexPoint;
-          this.indexStartLine = indexLine;
-
+        // Выбор точки на линии
+        if(selectPointOnLine(this, x, y)) {
           return "Selected";
         }
-      }
-
-      if (this.lines.length > 0 && !this.$store.state.drawLine && this.$store.state.action != "movePoint") {
+        // Сброс выделения разметки линии
         for (let line of this.lines) {
           line.main_line.attributes.selected = false;
         }
       }
 
-      const canvasFill = document.querySelector(
-        "#canvasFill"
-      ) as HTMLCanvasElement;
-      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
+      // Выбор линии разметки
       for (let line of this.lines) {
-        if (ctxFill.isPointInPath(line.main_line.attributes.path, x, y)) {
-          line.main_line.attributes.selected = true;
+        const attributes = line.main_line.attributes;
+        const points = line.main_line.points;
+        
+        if (ctxFill.isPointInPath(attributes.path, x, y)) {
+          attributes.selected = true;
           return "Selected Line";
         }
       }
 
       // Начало отрисовки основной линии
-      if (!this.$store.state.drawLine && this.$store.state.action != "movePoint" && !this.visibleContextMenu) {
+      if (
+        !this.$store.state.drawLine &&
+        this.$store.state.action != "movePoint" &&
+        !this.visibleContextMenu
+      ) {
         this.startDraw(event);
         this.indexStartLine = this.lines.length - 1;
         return "Start drawing";
       }
       this.visibleContextMenu = false;
 
-      // Рисование линии
+      // Рисование линий
       if (this.$store.state.drawLine) {
-        const { lines } = this;
-        const countLines = lines.length;
-        const points = this.lines[countLines - 1].main_line.points;
-        const point = {
-          id: points.length,
-          x,
-          y,
-          joinedDelta: false,
-        };
-        points.push(point);
-        this.indexStartPoint++;
-        this.lines[countLines - 1].main_line.points = points;
-
-        this.$store.dispatch("savePoint", lines);
+        drawLine(this, x, y);
       }
     },
-    delayHandleClick(event: MouseEvent) {
-      setTimeout(() => this.handleClick(event), 140);
-    },
     mousedownPoint(event: MouseEvent) {
-      let x = event.offsetX;
-      let y = event.offsetY;
-      
+      const x = event.offsetX;
+      const y = event.offsetY;
+
       // Нажатие на точку
       let { indexPoint, indexLine } = this.pointover(x, y);
       if (this.lines.length > 0 && indexPoint >= 0) {
@@ -209,127 +172,55 @@ export default defineComponent({
     mouseupPoint() {
       this.downPoint = false;
       this.indexDeltaLine = -1;
-      
+
       setTimeout(() => {
-        this.$store.dispatch("changeAction", "auto");
+        this.$store.dispatch("changeAction", "waitAction");
         this.movePoint.state = false;
         this.movePoint.index = -1;
       }, 50);
     },
     mousemove(event: MouseEvent) {
-      const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-
-      let x = event.offsetX;
-      let y = event.offsetY;
+      const x = event.offsetX;
+      const y = event.offsetY;
 
       // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
-        let start =
-          this.lines[this.indexStartLine].main_line.points[
-            this.indexStartPoint
-          ];
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.drawLine(ctx, start.x, start.y, x, y);
+        animationDrawingLine(this, x, y);
+      }
+
+      // Сброс стилей мыши
+      if (
+        this.$store.state.action === "waitAction" ||
+        this.$store.state.action === "pointerPoint"
+      ) {
+        this.$store.dispatch("changeAction", "auto");
       }
 
       // Если мы навелись мышкой на точку
-      this.$store.dispatch("changeAction", "auto");
       if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
 
-      for (let [index, line] of this.lines.entries()) {
-        if (
-          this.comparisonCordPoints(
-            x,
-            y,
-            line.main_line.delta.x,
-            line.main_line.delta.y
-          )
-        ) {
+      // Если мы навелись мышкой на точку дельты
+      for (let line of this.lines) {
+        const delta = line.main_line.delta;
+        if (this.comparisonCordPoints(x, y, delta.x, delta.y)) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
       }
 
-      if (this.$store.state.addPoint) {
-        this.$store.dispatch("changeAction", "addPoint");
-      }
-
       // Перетаскивание точки
       if (this.downPoint && !this.$store.state.drawLine) {
-        this.movePoint.state = true;
-        this.$store.dispatch("changeAction", "movePoint");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.beginPath();
-
-        // Сохранение изменения координат точки
-        const { lines } = this;
-        const currentLine = lines[this.movePoint.indexLine].main_line;
-        let { points, delta, attributes } = currentLine;
-        points[this.movePoint.index].x = x;
-        points[this.movePoint.index].y = y;
-
-        // Если это точка к которой привязана дельта, тогда перемещаем дельту
-        let index = points.findIndex((element, index) => {
-          if (element.joinedDelta) {
-            return { index };
-          }
-        });
-        if (
-          index != -1 &&
-          this.comparisonCordPoints(x, y, points[index].x, points[index].y)
-        ) {
-          delta = {
-            x: x - delta.len.x,
-            y: y - delta.len.y,
-            len: delta.len,
-          };
-        }
-        const line = {
-          main_line: {
-            points,
-            delta,
-            attributes,
-          },
-        };
-
-        lines[this.movePoint.indexLine] = line;
-        this.$store.dispatch("savePoint", lines);
+        dragPoint(this, x, y);
       }
 
       // Перетаскивание дельты
       if (this.indexDeltaLine != -1) {
-        this.$store.dispatch("changeAction", "movePoint");
-        const { lines } = this;
-        const line = lines[this.indexDeltaLine].main_line;
-        const points = line.points;
-        let index = points.findIndex((element, index) => {
-          if (element.joinedDelta) {
-            return { index };
-          }
-        });
-
-        const pointJoined = points[index];
-        const delta = {
-          x,
-          y,
-          len: {
-            x: pointJoined.x - x,
-            y: pointJoined.y - y,
-          },
-        };
-        line.delta = delta;
-        this.$store.dispatch("savePoint", lines);
+        dragDelta(this, x, y);
       }
     },
     comparisonCordPoints(x1: number, y1: number, x2: number, y2: number) {
-      if (x1 > x2 - 15 && x1 < x2 + 15 && y1 > y2 - 15 && y1 < y2 + 15) {
-        return true;
-      }
-      return false;
+      return !!(x1 > x2 - 15 && x1 < x2 + 15 && y1 > y2 - 15 && y1 < y2 + 15);
     },
     pointover(mouseX: number, mouseY: number) {
       for (let [indexLine, line] of this.lines.entries()) {
@@ -385,34 +276,28 @@ export default defineComponent({
       return { indexLine: -1, indexPoint: -1 };
     },
     endDraw(event: MouseEvent) {
-      event.preventDefault();
-      // this.lines[this.indexStartLine].main_line.attributes.selected = false;
-      // this.$store.dispatch("savePoint", this.lines);
-      this.visibleContextMenu = true;
-      const contextMenu = document.querySelector(
-        "#context-menu"
-      ) as HTMLElement;
+      const contextMenu = this.$refs.contextMenu as HTMLElement;
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       contextMenu.style.left = `${event.offsetX}px`;
       contextMenu.style.top = `${event.offsetY}px`;
-      this.$store.dispatch("endDraw");
-      this.indexStartLine++;
 
-      const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.indexStartLine++;
+      this.visibleContextMenu = true;
+      this.$store.dispatch("endDraw");
     },
     submitData() {
       this.visibleContextMenu = false;
     },
-    draw() {
-      this.lines = this.$store.state.lines;
-
-      const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
+    render() {
+      const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      const canvasFill = document.querySelector(
-        "#canvasFill"
-      ) as HTMLCanvasElement;
+      const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
       const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
+
+      this.lines = this.$store.state.lines;
 
       canvasFill.width = canvasFill.offsetWidth;
       canvasFill.height = canvasFill.offsetHeight;
@@ -425,7 +310,6 @@ export default defineComponent({
         ctx.lineCap = "round";
         for (let line of this.lines) {
           const points = line.main_line.points;
-          const start = points[0];
 
           if (line.main_line.attributes.selected) {
             // Отрисовка основных линий и точек
@@ -434,11 +318,11 @@ export default defineComponent({
             ctx.strokeStyle = "black";
             for (let i = 0; i < points.length; i++) {
               const end = points[i];
-              ctx.fillStyle = "blue";
               const circle = new Path2D();
+              ctx.fillStyle = "blue";
               circle.arc(end.x, end.y, 5, 0, 2 * Math.PI);
               ctx.fill(circle);
-              ctx.lineTo(end.x, end.y); 
+              ctx.lineTo(end.x, end.y);
             }
             ctx.stroke();
           }
@@ -470,43 +354,49 @@ export default defineComponent({
                 return { index };
               }
             });
-            
+
             if (index === -1) {
               return "Delta not found";
             }
-              ctx.lineWidth = 2;
-              ctx.strokeStyle = "chartreuse";
-              // Рисование основной линии дельты
-              this.drawLine(
-                ctx,
-                points[index].x,
-                points[index].y,
-                line.main_line.delta.x,
-                line.main_line.delta.y
-              );
-              // Рисование точки дельты
-              const circle = new Path2D();
-              circle.arc(line.main_line.delta.x, line.main_line.delta.y, 5, 0, 2 * Math.PI);
-              ctx.fill(circle);
-              // Отражение линии дельты
-              const delta = {
-                x: points[index].x + line.main_line.delta.len.x,
-                y: points[index].y + line.main_line.delta.len.y,
-              };
-              this.drawLine(
-                ctx,
-                points[index].x,
-                points[index].y,
-                delta.x,
-                delta.y
-              );
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "chartreuse";
+            // Рисование основной линии дельты
+            this.renderLine(
+              ctx,
+              points[index].x,
+              points[index].y,
+              line.main_line.delta.x,
+              line.main_line.delta.y
+            );
+            // Рисование точки дельты
+            let circle = new Path2D();
+            circle.arc(
+              line.main_line.delta.x,
+              line.main_line.delta.y,
+              5,
+              0,
+              2 * Math.PI
+            );
+            ctx.fill(circle);
+            // Отрисовка линии дельты
+            let delta = {
+              x: points[index].x + line.main_line.delta.len.x,
+              y: points[index].y + line.main_line.delta.len.y,
+            };
+            this.renderLine(
+              ctx,
+              points[index].x,
+              points[index].y,
+              delta.x,
+              delta.y
+            );
           }
         }
       }
 
-      requestAnimationFrame(this.draw);
+      requestAnimationFrame(this.render);
     },
-    drawLine(
+    renderLine(
       ctx: CanvasRenderingContext2D,
       startX: number,
       startY: number,
@@ -520,33 +410,34 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.draw();
+    this.render();
     addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.ctrlKey) {
-        this.$store.dispatch("addPoint");
+        this.$store.dispatch("changeAction", "addPoint");
       }
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
       if (event.key === "Control") {
-        this.$store.dispatch("addPoint");
+        this.$store.dispatch("changeAction", "waitAction");
       }
       if (event.key === "Escape") {
-        this.indexStartLine++;
-        this.$store.dispatch("endDraw");
-
-        const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
+        const canvas = this.$refs.canvas as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        this.indexStartLine++;
+        this.$store.dispatch("endDraw");
       }
       if (event.key === "Delete") {
         let currentLine = this.lines[this.indexStartLine].main_line;
-        if (currentLine.points.length > 0) {
-          currentLine.points.splice(this.indexStartPoint, 1);
-          this.indexStartPoint = currentLine.points.length - 1;
-          if (this.indexStartPoint === -1) {
-            this.lines.splice(this.indexStartLine, 1);
-            this.$store.dispatch("endDraw");
-          }
+        if (currentLine.points.length < 1) {
+          return "Точек нет, нечего удалять"; 
+        }
+        currentLine.points.splice(this.indexStartPoint, 1);
+        this.indexStartPoint = currentLine.points.length - 1;
+        if (this.indexStartPoint === -1) {
+          this.lines.splice(this.indexStartLine, 1);
+          this.$store.dispatch("endDraw");
         }
       }
     });
@@ -572,12 +463,7 @@ export default defineComponent({
 
 form {
   position: absolute;
-  display: none;
   padding: 1em 2em;
   background-color: #fff;
-}
-
-.isVisible {
-  display: grid;
 }
 </style>
