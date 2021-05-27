@@ -1,20 +1,24 @@
 <template>
   <div>
-    <canvas id="canvasFill" width="800" height="800">Not supported Canvas</canvas>
-    <canvas id="canvasAnim" width="800" height="800">Not supported Canvas</canvas>
+    <canvas id="canvasFill" ref="canvasFill" width="800" height="800"
+      >Not supported Canvas</canvas
+    >
+    <canvas id="canvasAnim" ref="canvasAnim" width="800" height="800"
+      >Not supported Canvas</canvas
+    >
     <canvas
       id="canvas"
+      ref="canvas"
       width="800"
       height="800"
       @click="handleClick"
-      @dblclick="startDraw"
-      @contextmenu="endDrawLine"
+      @contextmenu.prevent="endDraw"
       @mousemove="mousemove"
       @mousedown="mousedownPoint"
       @mouseup="mouseupPoint"
       >Not supported Canvas</canvas
     >
-    <form id="context-menu" :class="{ isVisible: visibleContextMenu }">
+    <form ref="contextMenu" v-show="visibleContextMenu">
       <div>
         <label>Введите число парковочных мест: </label>
         <input type="text" />
@@ -25,314 +29,305 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { animationDrawingLine, dragPoint, dragDelta } from "./CanvasMousemove";
+import { addPointOnLine, selectPointOnLine, drawLine } from "./CanvasHandleClick";
+import { renderMainLine, renderAreaLine, renderDelta } from "./CanvasRender";
 
 export default defineComponent({
   name: "Canvas",
   data() {
-    const defaultPoints: parkingPlacesArrayType = []
     return {
-      lineClosed: -1,
-      indexMovePoint: -1,
+      indexStartLine: 0,
+      indexDeltaLine: -1,
       indexStartPoint: 0,
-      points: defaultPoints,
+      lines: [] as parkingPlacesArrayType,
       moveLine: false,
       downPoint: false,
       visibleContextMenu: false,
-      selectedPointPos: {x: -1, y: -1}
+      movePoint: {
+        index: -1,
+        indexLine: -1,
+        state: false,
+      },
     };
   },
   methods: {
     startDraw(event: MouseEvent) {
-      const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const { lines } = this;
+      const id = 0;
+      const x = event.offsetX;
+      const y = event.offsetY;
+      const line = {
+        main_line: {
+          points: [
+            {
+              id,
+              x,
+              y,
+              joinedDelta: true,
+            },
+          ],
+          delta: {
+            x: x - 50,
+            y: y - 50,
+            len: {
+              x: 50,
+              y: 50,
+            },
+          },
+          attributes: {
+            parking_size: 0,
+            disabled: false,
+            selected: true,
+            path: {} as Path2D,
+          },
+        },
+      };
+      lines.push(line);
+      this.indexStartPoint = 0;
+      this.$store.dispatch("startDraw");
+      this.$store.dispatch("savePoint", lines);
+    },
+    handleClick(event: MouseEvent) {
       const x = event.offsetX;
       const y = event.offsetY;
 
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
+      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
-      const points = this.points;
-
-      points.push({
-        coordinates: {
-          x,
-          y,
-          positionNumber: 0,
-        },
-        finished: false,
-        meta: {
-          placeNumber: 0,
-          forDisabledDrive: false,
-        },
-      });
-
-      this.$store.dispatch("savePoint", points);
-      this.$store.dispatch("startDraw");
-    },
-    handleClick(event: MouseEvent) {
-      this.visibleContextMenu = false;
-
-      let x = event.offsetX;
-      let y = event.offsetY;
-
-      // Добавление точки на линию
-      if (this.$store.state.addPoint && this.points.length > 1) {
-        const indexLine = this.lineover(x, y);
-        const points = this.points;
-        const point = {
-          coordinates: {
-            x,
-            y,
-            positionNumber: 0,
-          },
-          finished: false,
-          meta: {
-            placeNumber: 0,
-            forDisabledDrive: false,
-          },
-        }
-        points.splice(indexLine, 0, point)
-        this.$store.dispatch("savePoint", points);
+      // Добавление точки на линии
+      if (this.$store.state.action === "addPoint") {
+        addPointOnLine(this, x, y);
       }
 
-      // Выбор точки на линии
-      let indexFoundPoint = this.pointover(x, y);
       if (
-          indexFoundPoint != -1 && 
-          this.selectedPointPos.x > this.points[indexFoundPoint].coordinates.x - 4 &&
-          this.selectedPointPos.x < this.points[indexFoundPoint].coordinates.x + 4
-        ) {
-          this.points[indexFoundPoint].finished = true;
-          this.indexStartPoint = indexFoundPoint
-          this.$store.dispatch("startDraw");
-          return "selescete";
+        this.lines.length > 0 &&
+        !this.$store.state.drawLine &&
+        this.$store.state.action != "movePoint"
+      ) {
+        // Выбор точки на линии
+        if(selectPointOnLine(this, x, y)) {
+          return "Selected";
         }
+        // Сброс выделения разметки линии
+        for (let line of this.lines) {
+          this.indexStartLine = this.lines.length;
+          line.main_line.attributes.selected = false;
+        }
+      }
 
+      // Выбор линии разметки
+      for (let line of this.lines) {
+        const attributes = line.main_line.attributes;
+        const points = line.main_line.points;
+        if (ctxFill.isPointInPath(attributes.path, x, y)) {
+          attributes.selected = true;
+          return "Selected Line";
+        }
+      }
+
+      // Начало рисования основной линии
+      if (
+        !this.$store.state.drawLine &&
+        this.$store.state.action != "movePoint" &&
+        !this.visibleContextMenu
+      ) {
+        this.startDraw(event);
+        this.indexStartLine = this.lines.length - 1;
+        return "Start drawing";
+      }
+      this.visibleContextMenu = false;
+
+      // Продолжение рисования основной линий
       if (this.$store.state.drawLine) {
-
-        // Добавление точек
-
-        const points = this.points;
-        const point = {
-          coordinates: {
-            x,
-            y,
-            positionNumber: 0,
-          },
-          finished: false,
-          meta: {
-            placeNumber: 0,
-            forDisabledDrive: false,
-          },
-        }
-        this.indexStartPoint++
-        points.splice(this.indexStartPoint, 0, point);
-        this.$store.dispatch("savePoint", points);
+        drawLine(this, x, y);
       }
     },
     mousedownPoint(event: MouseEvent) {
-      let x = event.offsetX;
-      let y = event.offsetY;
+      const x = event.offsetX;
+      const y = event.offsetY;
 
-      this.selectedPointPos = {x, y}; 
-
-      if (this.pointover(x, y) >= 0) {
+      // Нажатие на точку
+      let { indexPoint, indexLine } = this.pointover(x, y);
+      if (this.lines.length > 0 && indexPoint >= 0) {
         this.downPoint = true;
-        this.indexMovePoint = this.pointover(x, y);
+        this.movePoint.index = indexPoint;
+        this.movePoint.indexLine = indexLine;
+      }
+
+      // Нажатие на дельту
+      for (let [index, line] of this.lines.entries()) {
+        if (
+          this.comparisonCordPoints(
+            x,
+            y,
+            line.main_line.delta.x,
+            line.main_line.delta.y
+          )
+        ) {
+          this.indexDeltaLine = index;
+        }
       }
     },
     mouseupPoint() {
-      if (this.downPoint) {
-        const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      this.downPoint = false;
+      this.indexDeltaLine = -1;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        this.$store.dispatch("changeAction", "auto");
-        this.downPoint = false;
-        this.indexMovePoint = -1;
-      }
+      setTimeout(() => {
+        this.$store.dispatch("changeAction", "waitAction");
+        this.movePoint.state = false;
+        this.movePoint.index = -1;
+      }, 50);
     },
     mousemove(event: MouseEvent) {
-      const canvas = document.querySelector("#canvas") as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const x = event.offsetX;
+      const y = event.offsetY;
 
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-
-      let x = event.offsetX;
-      let y = event.offsetY;
-
+      // Анимация отрисовки линии
       if (this.$store.state.drawLine) {
-        let start = this.points[this.indexStartPoint].coordinates;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.drawLine(ctx, start.x, start.y, x, y);
+        animationDrawingLine(this, x, y);
       }
-      
-      // Если мы навелись мышкой на точку
-      if (this.pointover(x, y) >= 0) {
-        this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
-      } else {
+
+      // Сброс стилей мыши
+      if (
+        this.$store.state.action === "waitAction" ||
+        this.$store.state.action === "pointerPoint"
+      ) {
         this.$store.dispatch("changeAction", "auto");
       }
 
-      if (this.$store.state.addPoint) {
-        this.$store.dispatch("changeAction", "addPoint");
+      // Если мы навелись мышкой на точку
+      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
+        this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
+      }
+
+      // Если мы навелись мышкой на точку дельты
+      for (let line of this.lines) {
+        const delta = line.main_line.delta;
+        if (this.comparisonCordPoints(x, y, delta.x, delta.y)) {
+          this.$store.dispatch("changeAction", "pointerPoint");
+        }
       }
 
       // Перетаскивание точки
-      if (this.downPoint) {
-        this.$store.dispatch("changeAction", "movePoint");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.beginPath();
-        // Если это первая точка
-        if (this.indexMovePoint == 0) {
-          let start = this.points[this.indexMovePoint + 1].coordinates;
-          this.drawLine(ctx, start.x, start.y, x, y);
-          // Если это последняя точка
-        } else if (this.indexMovePoint == this.points.length - 1) {
-          let start = this.points[this.indexMovePoint - 1].coordinates;
-          this.drawLine(ctx, start.x, start.y, x, y);
-        } else {
-          let start = this.points[this.indexMovePoint - 1].coordinates;
-          let end = this.points[this.indexMovePoint + 1].coordinates;
-          ctx.moveTo(start.x, start.y);
-          ctx.lineTo(x, y);
-          ctx.lineTo(end.x, end.y);
-          ctx.stroke();
-        }
-
-        // Сохранение изменения положения точки
-        const points = this.points;
-        points[this.indexMovePoint].coordinates.x = x;
-        points[this.indexMovePoint].coordinates.y = y;
-        this.$store.dispatch("savePoint", points);
+      if (this.downPoint && !this.$store.state.drawLine) {
+        dragPoint(this, x, y);
       }
+
+      // Перетаскивание дельты
+      if (this.indexDeltaLine != -1) {
+        dragDelta(this, x, y);
+      }
+    },
+    comparisonCordPoints(x1: number, y1: number, x2: number, y2: number) {
+      return !!(x1 > x2 - 15 && x1 < x2 + 15 && y1 > y2 - 15 && y1 < y2 + 15);
     },
     pointover(mouseX: number, mouseY: number) {
-      for (let [index, point] of this.points.entries()) {
-        // Сравнение координат мыши и точки
-        if (
-          // По оси X
-          mouseX > point.coordinates.x - 15 &&
-          mouseX < point.coordinates.x + 15 &&
-          // По оси Y
-          mouseY > point.coordinates.y - 15 &&
-          mouseY < point.coordinates.y + 15
-        ) {
-          return index;
+      for (let [indexLine, line] of this.lines.entries()) {
+        for (let [indexPoint, point] of line.main_line.points.entries()) {
+          // Сравнение координат мыши и точки
+          if (this.comparisonCordPoints(mouseX, mouseY, point.x, point.y)) {
+            return { indexPoint, indexLine };
+          }
         }
       }
-      return -1;
+      return { indexPoint: -1, indexLine: -1 };
     },
+    // Сравнение координат мыши и линии
     lineover(mouseX: number, mouseY: number) {
-      for (let i = 0; i < this.points.length; i++) {
-        // Сравнение координат мыши и линии
-        let startPoint = {x: 0, y: 0, positionNumber: 0};
-        let endPoint = {x: 0, y: 0, positionNumber: 0};
-        if (i == this.points.length - 1) {
-          startPoint = this.points[i - 1].coordinates;
-          endPoint = this.points[i].coordinates;
-        } else {
-          startPoint = this.points[i].coordinates;
-          endPoint = this.points[i + 1].coordinates;
-        }
-        // console.table({mouse: {x: mouseX, y: mouseY}, startPoint, endPoint})
-        if (
-          // Если линия направлена в правый нижний угол
-          (mouseX > startPoint.x &&
-          mouseX < endPoint.x &&
-          mouseY > startPoint.y &&
-          mouseY < endPoint.y) || 
-          // Если линия направлена в левый верхний угол
-          (mouseX < startPoint.x &&
-          mouseX > endPoint.x &&
-          mouseY < startPoint.y &&
-          mouseY > endPoint.y) || 
-          // Если линия направлена в правый верхний угол
-          (mouseX > startPoint.x &&
-          mouseX < endPoint.x &&
-          mouseY < startPoint.y &&
-          mouseY > endPoint.y) || 
-          // Если линия направлена в левый нижний угол
-          (mouseX < startPoint.x &&
-          mouseX > endPoint.x &&
-          mouseY > startPoint.y &&
-          mouseY < endPoint.y)
-
-        ) {
-          return i + 1;
+      for (let [indexLine, line] of this.lines.entries()) {
+        let points = line.main_line.points;
+        for (let i = 0; i < points.length; i++) {
+          let startPoint = { id: 0, x: 0, y: 0 };
+          let endPoint = { id: 0, x: 0, y: 0 };
+          if (i === points.length - 1) {
+            startPoint = points[i - 1];
+            endPoint = points[i];
+          } else {
+            startPoint = points[i];
+            endPoint = points[i + 1];
+          }
+          if (
+            // Если линия направлена в правый нижний угол
+            (mouseX > startPoint.x &&
+              mouseX < endPoint.x &&
+              mouseY > startPoint.y &&
+              mouseY < endPoint.y) ||
+            // Если линия направлена в левый верхний угол
+            (mouseX < startPoint.x &&
+              mouseX > endPoint.x &&
+              mouseY < startPoint.y &&
+              mouseY > endPoint.y) ||
+            // Если линия направлена в правый верхний угол
+            (mouseX > startPoint.x &&
+              mouseX < endPoint.x &&
+              mouseY < startPoint.y &&
+              mouseY > endPoint.y) ||
+            // Если линия направлена в левый нижний угол
+            (mouseX < startPoint.x &&
+              mouseX > endPoint.x &&
+              mouseY > startPoint.y &&
+              mouseY < endPoint.y)
+          ) {
+            return { indexLine, indexPoint: i + 1 };
+          }
         }
       }
-      return -1;
+      return { indexLine: -1, indexPoint: -1 };
     },
-    endDrawLine(event: MouseEvent) {
-      event.preventDefault();
-      this.visibleContextMenu = true;
-      const contextMenu = document.querySelector(
-        "#context-menu"
-      ) as HTMLElement;
-      contextMenu.style.left = `${event.offsetX}px`;
-      contextMenu.style.top = `${event.offsetY}px`;
-      this.$store.dispatch("endDraw");
-    },
-    draw() {
-      this.points = this.$store.state.points;
-
-      const canvas = document.querySelector("#canvasAnim") as HTMLCanvasElement;
+    endDraw(event: MouseEvent) {
+      const contextMenu = this.$refs.contextMenu as HTMLElement;
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-      // Отрисовка всех точек и линий
-      if (this.points.length > 0) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 5;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        const start = this.points[0].coordinates;
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-        for (let i = 1; i < this.points.length; i++) {
-          // const start = this.points[i - 1].coordinates;
-          const end = this.points[i].coordinates;
-          if (this.points[i].finished) {
-            ctx.fillStyle = "yellow";
-          } else {
-            ctx.fillStyle = "green";
-          }
-          // ctx.fillRect(start.x - 5, start.y - 5, 10, 10);
-          ctx.fillRect(end.x - 5, end.y - 5, 10, 10);
-          // this.drawLine(ctx, start.x, start.y, end.x, end.y);
-          ctx.lineTo(end.x, end.y);
-        }
-        ctx.stroke();
-      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      contextMenu.style.left = `${event.offsetX}px`;
+      contextMenu.style.top = `${event.offsetY}px`;
 
-      if (this.lineClosed != -1) {
-        // Отрисовка замыкания фигуры
-        const start = this.points[this.points.length - 1].coordinates;
-        const end = this.points[this.lineClosed].coordinates;
-        this.drawLine(ctx, start.x, start.y, end.x, end.y);
-
-        // Закрашивание фигуры
-        const canvasFill = document.querySelector(
-          "#canvasFill"
-        ) as HTMLCanvasElement;
-        const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
-        canvasFill.width = canvasFill.offsetWidth;
-        canvasFill.height = canvasFill.offsetHeight;
-
-        ctxFill.beginPath();
-        ctxFill.fillStyle = "rgba(0, 0, 0, .5)";
-        for (let point of this.points) {
-          ctxFill.lineTo(point.coordinates.x, point.coordinates.y);
-        }
-        ctxFill.fill();
-      }
-
-      requestAnimationFrame(this.draw);
+      this.indexStartLine++;
+      this.visibleContextMenu = true;
+      this.$store.dispatch("endDraw");
     },
-    drawLine(
+    submitData() {
+      this.visibleContextMenu = false;
+    },
+    render() {
+      const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
+      const ctxFill = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      canvasFill.width = canvasFill.offsetWidth;
+      canvasFill.height = canvasFill.offsetHeight;
+
+      this.lines = this.$store.state.lines;
+
+      // Отрисовка всех точек и линий
+      if (this.lines.length > 0) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        for (let line of this.lines) {
+          const mainLine = line.main_line;
+          const points = mainLine.points;
+
+          // Отрисовка области вокруг линии
+          renderAreaLine(ctxFill, mainLine);
+
+          if (mainLine.attributes.selected) {
+            // Отрисовка основных линий и точек
+            renderMainLine(ctx, points);
+            // Отрисовка дельты
+            renderDelta(this, ctx, mainLine);
+          }
+        }
+      }
+
+      requestAnimationFrame(this.render);
+    },
+    renderLine(
       ctx: CanvasRenderingContext2D,
       startX: number,
       startY: number,
@@ -346,7 +341,43 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.draw();
+    this.render();
+    addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.ctrlKey) {
+        this.$store.dispatch("changeAction", "addPoint");
+      }
+    });
+    addEventListener("keyup", (event: KeyboardEvent) => {
+      if (event.key === "Control") {
+        this.$store.dispatch("changeAction", "waitAction");
+      }
+      if (event.key === "Escape") {
+        const canvas = this.$refs.canvas as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        this.indexStartLine++;
+        this.$store.dispatch("endDraw");
+      }
+      if (event.key === "Delete") {
+        let currentLine = this.lines[this.indexStartLine].main_line;
+        if (currentLine.points.length < 1) {
+          return "Точек нет, нечего удалять"; 
+        }
+        currentLine.points.splice(this.indexStartPoint, 1);
+        this.indexStartPoint = currentLine.points.length - 1;
+        if (this.indexStartPoint === -1) {
+          this.lines.splice(this.indexStartLine, 1);
+          this.$store.dispatch("endDraw");
+        }
+      }
+    });
+    addEventListener("keypress", (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        this.submitData();
+      }
+    });
   },
 });
 </script>
@@ -363,12 +394,7 @@ export default defineComponent({
 
 form {
   position: absolute;
-  display: none;
   padding: 1em 2em;
   background-color: #fff;
-}
-
-.isVisible {
-  display: grid;
 }
 </style>

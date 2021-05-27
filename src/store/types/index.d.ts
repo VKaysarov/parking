@@ -1,17 +1,32 @@
-type parkingPlaceMetaData = {
-  placeNumber: number;
-  forDisabledDrive: boolean;
-};
+interface IAttributesMainLine {
+  parking_size: number;
+  disabled: boolean;
+  selected: boolean;
+  path: Path2D;
+}
 
-type parkingPlaceCoordinateType = {
+interface ICoordinates {
   x: number;
   y: number;
-  positionNumber: number;
-};
+}
 
-type parkingPlaceType = {
-  coordinates: parkingPlaceCoordinateType;
-  meta: parkingPlaceMetaData;
-};
+interface IDelta extends ICoordinates {
+  len: ICoordinates;
+}
 
-type parkingPlacesArrayType = parkingPlaceType[];
+interface IPointCoordinate extends ICoordinates {
+  id: number;
+  joinedDelta: boolean;
+}
+
+interface IMainLine {
+  points: IPointCoordinate[];
+  delta: IDelta;
+  attributes: IAttributesMainLine;
+}
+
+interface ILines {
+  main_line: IMainLine;
+}
+
+type parkingPlacesArrayType = ILines[];

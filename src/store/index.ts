@@ -1,45 +1,44 @@
 import { createStore } from "vuex";
-const defaultPoints: parkingPlacesArrayType = [];
 
 export default createStore({
   state: {
-    points: defaultPoints,
+    lines: [] as parkingPlacesArrayType,
     drawLine: false,
     addPoint: false,
     action: "auto",
   },
   mutations: {
-    savePoint(state, points) {
-      state.points = points;
+    SAVE_POINT(state, lines) {
+      state.lines = lines;
     },
-    startDraw(state) {
+    START_DRAW(state) {
       state.drawLine = true;
     },
-    endDraw(state) {
+    END_DRAW(state) {
       state.drawLine = false;
     },
-    addPoint(state) {
+    ADD_POINT(state) {
       state.addPoint = !state.addPoint;
     },
-    changeAction(state, action) {
+    CHANGE_ACTION(state, action) {
       state.action = action;
     },
   },
   actions: {
-    savePoint(context, points) {
-      context.commit("savePoint", points);
+    savePoint(context, lines) {
+      context.commit("SAVE_POINT", lines);
     },
     startDraw(context) {
-      context.commit("startDraw");
+      context.commit("START_DRAW");
     },
     endDraw(context) {
-      context.commit("endDraw");
+      context.commit("END_DRAW");
     },
     addPoint(context) {
-      context.commit("addPoint");
+      context.commit("ADD_POINT");
     },
     changeAction(context, action) {
-      context.commit("changeAction", action);
+      context.commit("CHANGE_ACTION", action);
     },
   },
   modules: {},
