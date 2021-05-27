@@ -31,6 +31,7 @@
 import { defineComponent } from "vue";
 import { animationDrawingLine, dragPoint, dragDelta } from "./CanvasMousemove";
 import { addPointOnLine, selectPointOnLine, drawLine } from "./CanvasHandleClick";
+import { renderMainLine, renderAreaLine, renderDelta } from "./CanvasRender";
 
 export default defineComponent({
   name: "Canvas",
@@ -294,100 +295,32 @@ export default defineComponent({
       const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
-      const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
+      const ctxFill = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      canvasFill.width = canvasFill.offsetWidth;
+      canvasFill.height = canvasFill.offsetHeight;
 
       this.lines = this.$store.state.lines;
 
-      canvasFill.width = canvasFill.offsetWidth;
-      canvasFill.height = canvasFill.offsetHeight;
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.lineJoin = "round";
         ctx.lineCap = "round";
         for (let line of this.lines) {
-          const points = line.main_line.points;
-
-          if (line.main_line.attributes.selected) {
-            // Отрисовка основных линий и точек
-            ctx.lineWidth = 5;
-            ctx.beginPath();
-            ctx.strokeStyle = "black";
-            for (let i = 0; i < points.length; i++) {
-              const end = points[i];
-              const circle = new Path2D();
-              ctx.fillStyle = "blue";
-              circle.arc(end.x, end.y, 5, 0, 2 * Math.PI);
-              ctx.fill(circle);
-              ctx.lineTo(end.x, end.y);
-            }
-            ctx.stroke();
-          }
+          const mainLine = line.main_line;
+          const points = mainLine.points;
 
           // Отрисовка области вокруг линии
-          let path = new Path2D();
-          line.main_line.attributes.path = path;
-          for (let i = 0; i < points.length; i++) {
-            const end = points[i];
-            ctxFill.fillStyle = "rgba(0, 200, 200, .5)";
-            path.lineTo(
-              end.x - line.main_line.delta.len.x,
-              end.y - line.main_line.delta.len.y
-            );
-          }
-          for (let i = points.length - 1; i >= 0; i--) {
-            const end = points[i];
-            path.lineTo(
-              end.x + line.main_line.delta.len.x,
-              end.y + line.main_line.delta.len.y
-            );
-          }
-          ctxFill.fill(path);
+          renderAreaLine(ctxFill, mainLine);
 
-          if (line.main_line.attributes.selected) {
+          if (mainLine.attributes.selected) {
+            // Отрисовка основных линий и точек
+            renderMainLine(ctx, points);
             // Отрисовка дельты
-            let index = points.findIndex((element, index) => {
-              if (element.joinedDelta) {
-                return { index };
-              }
-            });
-
-            if (index != -1) {
-              ctx.lineWidth = 2;
-              ctx.strokeStyle = "chartreuse";
-              // Рисование основной линии дельты
-              this.renderLine(
-                ctx,
-                points[index].x,
-                points[index].y,
-                line.main_line.delta.x,
-                line.main_line.delta.y
-              );
-              // Рисование точки дельты
-              let circle = new Path2D();
-              circle.arc(
-                line.main_line.delta.x,
-                line.main_line.delta.y,
-                5,
-                0,
-                2 * Math.PI
-              );
-              ctx.fill(circle);
-              // Отрисовка линии дельты
-              let delta = {
-                x: points[index].x + line.main_line.delta.len.x,
-                y: points[index].y + line.main_line.delta.len.y,
-              };
-              this.renderLine(
-                ctx,
-                points[index].x,
-                points[index].y,
-                delta.x,
-                delta.y
-              );
-            }
+            renderDelta(this, ctx, mainLine);
           }
         }
       }
