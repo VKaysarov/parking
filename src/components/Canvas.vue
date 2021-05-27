@@ -82,7 +82,6 @@ export default defineComponent({
           },
         },
       };
-
       lines.push(line);
       this.indexStartPoint = 0;
       this.$store.dispatch("startDraw");
@@ -96,7 +95,7 @@ export default defineComponent({
       const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
       // Добавление точки на линии
-      if (this.$store.state.action == "addPoint") {
+      if (this.$store.state.action === "addPoint") {
         addPointOnLine(this, x, y);
       }
 
@@ -111,6 +110,7 @@ export default defineComponent({
         }
         // Сброс выделения разметки линии
         for (let line of this.lines) {
+          this.indexStartLine = this.lines.length;
           line.main_line.attributes.selected = false;
         }
       }
@@ -119,14 +119,13 @@ export default defineComponent({
       for (let line of this.lines) {
         const attributes = line.main_line.attributes;
         const points = line.main_line.points;
-        
         if (ctxFill.isPointInPath(attributes.path, x, y)) {
           attributes.selected = true;
           return "Selected Line";
         }
       }
 
-      // Начало отрисовки основной линии
+      // Начало рисования основной линии
       if (
         !this.$store.state.drawLine &&
         this.$store.state.action != "movePoint" &&
@@ -138,7 +137,7 @@ export default defineComponent({
       }
       this.visibleContextMenu = false;
 
-      // Рисование линий
+      // Продолжение рисования основной линий
       if (this.$store.state.drawLine) {
         drawLine(this, x, y);
       }
@@ -355,41 +354,40 @@ export default defineComponent({
               }
             });
 
-            if (index === -1) {
-              return "Delta not found";
+            if (index != -1) {
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = "chartreuse";
+              // Рисование основной линии дельты
+              this.renderLine(
+                ctx,
+                points[index].x,
+                points[index].y,
+                line.main_line.delta.x,
+                line.main_line.delta.y
+              );
+              // Рисование точки дельты
+              let circle = new Path2D();
+              circle.arc(
+                line.main_line.delta.x,
+                line.main_line.delta.y,
+                5,
+                0,
+                2 * Math.PI
+              );
+              ctx.fill(circle);
+              // Отрисовка линии дельты
+              let delta = {
+                x: points[index].x + line.main_line.delta.len.x,
+                y: points[index].y + line.main_line.delta.len.y,
+              };
+              this.renderLine(
+                ctx,
+                points[index].x,
+                points[index].y,
+                delta.x,
+                delta.y
+              );
             }
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = "chartreuse";
-            // Рисование основной линии дельты
-            this.renderLine(
-              ctx,
-              points[index].x,
-              points[index].y,
-              line.main_line.delta.x,
-              line.main_line.delta.y
-            );
-            // Рисование точки дельты
-            let circle = new Path2D();
-            circle.arc(
-              line.main_line.delta.x,
-              line.main_line.delta.y,
-              5,
-              0,
-              2 * Math.PI
-            );
-            ctx.fill(circle);
-            // Отрисовка линии дельты
-            let delta = {
-              x: points[index].x + line.main_line.delta.len.x,
-              y: points[index].y + line.main_line.delta.len.y,
-            };
-            this.renderLine(
-              ctx,
-              points[index].x,
-              points[index].y,
-              delta.x,
-              delta.y
-            );
           }
         }
       }

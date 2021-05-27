@@ -18,7 +18,6 @@ function addPointOnLine(self: any, x: number, y: number) {
 
 function selectPointOnLine(self: any, x: number, y: number) {
   const { indexPoint, indexLine } = self.pointover(x, y);
-  console.log(indexPoint);
 
   if (indexPoint != -1) {
     const { lines } = self;
