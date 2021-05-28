@@ -36,8 +36,8 @@
         "
         :color="
           lines[indexSelectedLine].main_line.attributes.disabled
-            ? 'cyan'
-            : 'disabled'
+            ? defaultParkingColor
+            : invalidParkingColor
         "
         icon
         tile
@@ -83,6 +83,8 @@ export default defineComponent({
   data() {
     return {
       lines: [] as parkingPlacesArrayType,
+      defaultParkingColor: "#00fcff",
+      invalidParkingColor: "#d81b60",
       indexSelectedLine: 0,
       indexStartPoint: 0,
       indexDeltaLine: -1,
@@ -360,7 +362,7 @@ export default defineComponent({
           const points = mainLine.points;
 
           // Отрисовка области вокруг линии
-          renderAreaLine(ctxFill, mainLine);
+          renderAreaLine(this, ctxFill, mainLine);
 
           if (mainLine.attributes.selected) {
             // Отрисовка основных линий и точек
