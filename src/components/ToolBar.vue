@@ -50,7 +50,7 @@
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "CreateLine",
+  name: "ToolBar",
   data() {
     return {
       lines: [] as parkingPlacesArrayType,
@@ -97,7 +97,7 @@ export default defineComponent({
 
 li > .v-card {
   padding: 0.4em 1.4em;
-  box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
+  box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%),
+    0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
 }
-
 </style>

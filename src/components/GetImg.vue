@@ -38,6 +38,7 @@ export default defineComponent({
 <style>
 #canvas-wrapper {
   position: relative;
+  max-height: calc(100% - 64px);
   height: 100%;
 }
 

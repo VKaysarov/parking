@@ -388,14 +388,14 @@ export default defineComponent({
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
       const { code } = event;
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
       if (event.key === "Control") {
         this.$store.dispatch("changeAction", "waitAction");
       }
       if (code === "Escape") {
-        const canvas = this.$refs.canvas as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         this.$store.dispatch("endDraw");
       }
       if (code === "Delete") {
@@ -405,6 +405,7 @@ export default defineComponent({
         }
         currentLine.points.splice(this.indexStartPoint, 1);
         this.indexStartPoint = currentLine.points.length - 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (this.indexStartPoint === -1) {
           this.lines.splice(this.indexSelectedLine, 1);
           this.indexSelectedLine = this.lines.length - 1;
