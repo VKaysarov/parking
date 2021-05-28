@@ -201,7 +201,9 @@ export default defineComponent({
 
       setTimeout(() => {
         canvas.style.zIndex = "0";
-        this.$store.dispatch("changeAction", "waitAction");
+        if (this.$store.state.action !== "addPoint") {
+          this.$store.dispatch("changeAction", "waitAction");
+        }
         this.movePoint.state = false;
         this.movePoint.index = -1;
       }, 50);
@@ -225,7 +227,7 @@ export default defineComponent({
       }
 
       // Если мы навелись мышкой на точку
-      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
+      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0 && this.$store.state.action !== "addPoint") {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
 
@@ -382,7 +384,7 @@ export default defineComponent({
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
       const { code } = event;
-      if (code === "Control") {
+      if (event.key === "Control") {
         this.$store.dispatch("changeAction", "waitAction");
       }
       if (code === "Escape") {
