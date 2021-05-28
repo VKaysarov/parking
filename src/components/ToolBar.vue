@@ -24,7 +24,7 @@
     <v-app-bar-title>Lines: </v-app-bar-title>
     <ul>
       <li v-for="[index, line] in lines.entries()" :key="index">
-        <v-btn
+        <v-card
           block
           tile
           color="primary"
@@ -34,13 +34,13 @@
             {{ `Line ${index + 1} ` }}
           </span>
           {{ lineInfo(line.main_line) }}
-        </v-btn>
-        <v-btn block tile @click="selectLine(line.main_line)" v-else>
+        </v-card>
+        <v-card block tile @click="selectLine(line.main_line)" v-else>
           <span class="v-btn__left-item">
             {{ `Line ${index + 1} ` }}
           </span>
           {{ lineInfo(line.main_line) }}
-        </v-btn>
+        </v-card>
       </li>
     </ul>
   </v-navigation-drawer>
@@ -94,4 +94,10 @@ export default defineComponent({
   font-weight: bold;
   margin-right: 5px;
 }
+
+li > .v-card {
+  padding: 0.4em 1.4em;
+  box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%), 0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
+}
+
 </style>
