@@ -43,27 +43,6 @@
         tile
         ><img src="/img/icon-disabled.svg" width="20" alt="icon-invalid"
       /></v-btn>
-      <!-- <div class="input-wrapper">
-        <label>Число парковочных мест: </label>
-        <input type="text" placeholder="0" v-model="parking_size" />
-      </div> -->
-      <!-- <div class="input-wrapper">
-        <label>Тип парковочных мест:</label>
-        <div>
-          <v-btn
-            @click="invalid = true"
-            elevation="2"
-            tile
-            fab
-          >Инвалидные</v-btn>
-          <v-btn
-            @click="invalid = false"
-            elevation="2"
-            fab
-            tile
-          >Не инвалидные</v-btn>
-        </div>
-      </div> -->
     </form>
   </div>
 </template>
@@ -216,16 +195,19 @@ export default defineComponent({
       }
     },
     mouseupPoint() {
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
       this.downPoint = false;
       this.indexDeltaLine = -1;
 
       setTimeout(() => {
+        canvas.style.zIndex = "0";
         this.$store.dispatch("changeAction", "waitAction");
         this.movePoint.state = false;
         this.movePoint.index = -1;
       }, 50);
     },
     mousemove(event: MouseEvent) {
+      const canvas = this.$refs.canvas as HTMLCanvasElement
       const x = event.offsetX;
       const y = event.offsetY;
 
@@ -257,11 +239,13 @@ export default defineComponent({
 
       // Перетаскивание точки
       if (this.downPoint && !this.$store.state.drawLine) {
+        canvas.style.zIndex = "1";
         dragPoint(this, x, y);
       }
 
       // Перетаскивание дельты
       if (this.indexDeltaLine != -1) {
+        canvas.style.zIndex = "1";
         dragDelta(this, x, y);
       }
     },
@@ -354,6 +338,9 @@ export default defineComponent({
         for (let line of this.lines) {
           const mainLine = line.main_line;
           const points = mainLine.points;
+          const contextMenu = this.$refs.contextMenu as HTMLElement;
+          const contextX = mainLine.points[0].x - 50;
+          const contextY = mainLine.points[0].y + 15;
 
           // Отрисовка области вокруг линии
           renderAreaLine(this, ctxFill, mainLine);
@@ -363,9 +350,6 @@ export default defineComponent({
             renderMainLine(ctx, points);
             // Отрисовка дельты
             renderDelta(this, ctx, mainLine);
-            const contextMenu = this.$refs.contextMenu as HTMLElement;
-            const contextX = mainLine.points[0].x - 50;
-            const contextY = mainLine.points[0].y + 15;
 
             this.visibleContextMenu = true;
             contextMenu.style.left = `${contextX}px`;
