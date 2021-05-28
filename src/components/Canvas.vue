@@ -165,9 +165,8 @@ export default defineComponent({
       // Выбор линии разметки
       for (let [index, line] of this.lines.entries()) {
         const attributes = line.main_line.attributes;
-        const points = line.main_line.points;
-        this.indexSelectedLine = index;
         if (ctxFill.isPointInPath(attributes.path, x, y)) {
+          this.indexSelectedLine = index;
           attributes.selected = true;
           return "Selected Line";
         }
@@ -322,17 +321,12 @@ export default defineComponent({
       }
       return { indexLine: -1, indexPoint: -1 };
     },
-    endDraw(event: MouseEvent) {
+    endDraw() {
       if (this.$store.state.drawLine) {
-        // const contextMenu = this.$refs.contextMenu as HTMLElement;
         const canvas = this.$refs.canvas as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // contextMenu.style.left = `${event.offsetX}px`;
-        // contextMenu.style.top = `${event.offsetY}px`;
-
-        // this.visibleContextMenu = true;
         this.$store.dispatch("endDraw");
       }
     },
