@@ -1,54 +1,42 @@
 <template>
   <CreateLine />
-  <getImg />
+  <GetImg />
 </template>
 
 <script lang="ts">
-import { Options, Vue } from "vue-class-component";
-import GetImg from "./components/GetImg.vue";
+import { defineComponent } from "vue";
 import CreateLine from "./components/CreateLine.vue";
+import GetImg from "./components/GetImg.vue";
 
-@Options({
+export default defineComponent({
+  name: "App",
+
   components: {
-    CreateLine,
     GetImg,
+    CreateLine,
   },
-})
-export default class App extends Vue {}
+
+  data() {
+    return {
+      //
+    };
+  },
+});
 </script>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-user-drag: none;
-  user-drag: none;
-  -webkit-touch-callout: none;
-}
-
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
   display: grid;
   grid-template-rows: 10% 90%;
   height: 100vh;
 }
 
-button {
-  padding: 0.8em 1.4em;
-}
-
-img {
-  user-select: none;
+input {
+  border: 1px solid #000;
+  padding: 0.25em;
 }
 </style>

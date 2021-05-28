@@ -1,8 +1,8 @@
 function animationDrawingLine(self: any, x: number, y: number) {
   const canvas = self.$refs.canvas as HTMLCanvasElement;
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-  const currentLine = self.lines[self.indexStartLine].main_line;
-  const start = currentLine.points[self.indexStartPoint];
+  const lastLine = self.lines[self.lines.length - 1].main_line;
+  const start = lastLine.points[self.indexStartPoint];
 
   canvas.width = canvas.offsetWidth;
   canvas.height = canvas.offsetHeight;

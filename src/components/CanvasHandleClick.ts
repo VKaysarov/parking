@@ -34,13 +34,13 @@ function selectPointOnLine(self: any, x: number, y: number) {
     delta.y = y - delta.len.y;
 
     self.indexStartPoint = indexPoint;
-    self.indexStartLine = indexLine;
+    self.indexSelectedLine = indexLine;
 
     return true;
   }
 }
 
-function drawLine(self: any, x: number, y: number) {
+function drawLine(self: any, x: number, y: number): void {
   const { lines } = self;
   const countLines = lines.length;
   const points = self.lines[countLines - 1].main_line.points;

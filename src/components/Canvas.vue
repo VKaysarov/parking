@@ -18,11 +18,52 @@
       @mouseup="mouseupPoint"
       >Not supported Canvas</canvas
     >
-    <form ref="contextMenu" v-show="visibleContextMenu">
-      <div>
-        <label>Введите число парковочных мест: </label>
-        <input type="text" />
-      </div>
+    <form
+      ref="contextMenu"
+      class="data-line"
+      v-if="lines.length > 0"
+      v-show="visibleContextMenu"
+    >
+      <input
+        type="text"
+        class="parking-count--small"
+        v-model="lines[indexSelectedLine].main_line.attributes.parking_size"
+      />
+      <v-btn
+        @click="
+          lines[indexSelectedLine].main_line.attributes.disabled =
+            !lines[indexSelectedLine].main_line.attributes.disabled
+        "
+        :color="
+          lines[indexSelectedLine].main_line.attributes.disabled
+            ? 'cyan'
+            : 'disabled'
+        "
+        icon
+        tile
+        ><img src="/img/icon-disabled.svg" width="20" alt="icon-invalid"
+      /></v-btn>
+      <!-- <div class="input-wrapper">
+        <label>Число парковочных мест: </label>
+        <input type="text" placeholder="0" v-model="parking_size" />
+      </div> -->
+      <!-- <div class="input-wrapper">
+        <label>Тип парковочных мест:</label>
+        <div>
+          <v-btn
+            @click="invalid = true"
+            elevation="2"
+            tile
+            fab
+          >Инвалидные</v-btn>
+          <v-btn
+            @click="invalid = false"
+            elevation="2"
+            fab
+            tile
+          >Не инвалидные</v-btn>
+        </div>
+      </div> -->
     </form>
   </div>
 </template>
@@ -30,17 +71,21 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { animationDrawingLine, dragPoint, dragDelta } from "./CanvasMousemove";
-import { addPointOnLine, selectPointOnLine, drawLine } from "./CanvasHandleClick";
+import {
+  addPointOnLine,
+  selectPointOnLine,
+  drawLine,
+} from "./CanvasHandleClick";
 import { renderMainLine, renderAreaLine, renderDelta } from "./CanvasRender";
 
 export default defineComponent({
   name: "Canvas",
   data() {
     return {
-      indexStartLine: 0,
-      indexDeltaLine: -1,
-      indexStartPoint: 0,
       lines: [] as parkingPlacesArrayType,
+      indexSelectedLine: 0,
+      indexStartPoint: 0,
+      indexDeltaLine: -1,
       moveLine: false,
       downPoint: false,
       visibleContextMenu: false,
@@ -106,20 +151,20 @@ export default defineComponent({
         this.$store.state.action != "movePoint"
       ) {
         // Выбор точки на линии
-        if(selectPointOnLine(this, x, y)) {
+        if (selectPointOnLine(this, x, y)) {
           return "Selected";
         }
         // Сброс выделения разметки линии
         for (let line of this.lines) {
-          this.indexStartLine = this.lines.length;
           line.main_line.attributes.selected = false;
         }
       }
 
       // Выбор линии разметки
-      for (let line of this.lines) {
+      for (let [index, line] of this.lines.entries()) {
         const attributes = line.main_line.attributes;
         const points = line.main_line.points;
+        this.indexSelectedLine = index;
         if (ctxFill.isPointInPath(attributes.path, x, y)) {
           attributes.selected = true;
           return "Selected Line";
@@ -132,8 +177,8 @@ export default defineComponent({
         this.$store.state.action != "movePoint" &&
         !this.visibleContextMenu
       ) {
+        this.indexSelectedLine = this.lines.length;
         this.startDraw(event);
-        this.indexStartLine = this.lines.length - 1;
         return "Start drawing";
       }
       this.visibleContextMenu = false;
@@ -276,17 +321,18 @@ export default defineComponent({
       return { indexLine: -1, indexPoint: -1 };
     },
     endDraw(event: MouseEvent) {
-      const contextMenu = this.$refs.contextMenu as HTMLElement;
-      const canvas = this.$refs.canvas as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      if (this.$store.state.drawLine) {
+        // const contextMenu = this.$refs.contextMenu as HTMLElement;
+        const canvas = this.$refs.canvas as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      contextMenu.style.left = `${event.offsetX}px`;
-      contextMenu.style.top = `${event.offsetY}px`;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // contextMenu.style.left = `${event.offsetX}px`;
+        // contextMenu.style.top = `${event.offsetY}px`;
 
-      this.indexStartLine++;
-      this.visibleContextMenu = true;
-      this.$store.dispatch("endDraw");
+        // this.visibleContextMenu = true;
+        this.$store.dispatch("endDraw");
+      }
     },
     submitData() {
       this.visibleContextMenu = false;
@@ -321,6 +367,13 @@ export default defineComponent({
             renderMainLine(ctx, points);
             // Отрисовка дельты
             renderDelta(this, ctx, mainLine);
+            const contextMenu = this.$refs.contextMenu as HTMLElement;
+            const contextX = mainLine.points[0].x - 50;
+            const contextY = mainLine.points[0].y + 15;
+
+            this.visibleContextMenu = true;
+            contextMenu.style.left = `${contextX}px`;
+            contextMenu.style.top = `${contextY}px`;
           }
         }
       }
@@ -348,26 +401,27 @@ export default defineComponent({
       }
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
-      if (event.key === "Control") {
+      const { code } = event;
+      if (code === "Control") {
         this.$store.dispatch("changeAction", "waitAction");
       }
-      if (event.key === "Escape") {
+      if (code === "Escape") {
         const canvas = this.$refs.canvas as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        this.indexStartLine++;
         this.$store.dispatch("endDraw");
       }
-      if (event.key === "Delete") {
-        let currentLine = this.lines[this.indexStartLine].main_line;
+      if (code === "Delete") {
+        let currentLine = this.lines[this.indexSelectedLine].main_line;
         if (currentLine.points.length < 1) {
-          return "Точек нет, нечего удалять"; 
+          return "Точек нет, нечего удалять";
         }
         currentLine.points.splice(this.indexStartPoint, 1);
         this.indexStartPoint = currentLine.points.length - 1;
         if (this.indexStartPoint === -1) {
-          this.lines.splice(this.indexStartLine, 1);
+          this.lines.splice(this.indexSelectedLine, 1);
+          this.indexSelectedLine = this.lines.length - 1;
           this.$store.dispatch("endDraw");
         }
       }
@@ -392,9 +446,20 @@ export default defineComponent({
   height: 100%;
 }
 
-form {
+.data-line {
   position: absolute;
-  padding: 1em 2em;
-  background-color: #fff;
+  /* padding: 1em 2em;
+  background-color: #fff; */
+}
+
+.input-wrapper {
+  display: grid;
+  margin: 20px 0;
+}
+
+.parking-count--small {
+  text-align: center;
+  max-width: 40px;
+  margin-right: 10px;
 }
 </style>

@@ -1,7 +1,9 @@
 <template>
-  <div class="tool-bar">
-    <button @click="createLine">Создать линию</button>
-    <button @click="addPoint">Добавить точку на линию</button>
+  <div single-line class="tool-bar">
+    <v-btn color="primary" text @click="createLine"> Создать линию </v-btn>
+    <v-btn color="primary" text @click="addPoint">
+      Добавить точку на линию
+    </v-btn>
   </div>
 </template>
 
