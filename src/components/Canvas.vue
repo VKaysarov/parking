@@ -63,7 +63,7 @@ export default defineComponent({
     return {
       lines: [] as parkingPlacesArrayType,
       defaultParkingColor: "#00fcff",
-      invalidParkingColor: "#d81b60",
+      invalidParkingColor: "red",
       indexSelectedLine: 0,
       indexStartPoint: 0,
       indexDeltaLine: -1,
