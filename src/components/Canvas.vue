@@ -63,7 +63,7 @@ export default defineComponent({
     return {
       lines: [] as parkingPlacesArrayType,
       defaultParkingColor: "#00fcff",
-      invalidParkingColor: "red",
+      invalidParkingColor: "#6200ee",
       indexSelectedLine: 0,
       indexStartPoint: 0,
       indexDeltaLine: -1,
@@ -209,7 +209,7 @@ export default defineComponent({
       }, 50);
     },
     mousemove(event: MouseEvent) {
-      const canvas = this.$refs.canvas as HTMLCanvasElement
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
       const x = event.offsetX;
       const y = event.offsetY;
 
@@ -227,7 +227,11 @@ export default defineComponent({
       }
 
       // Если мы навелись мышкой на точку
-      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0 && this.$store.state.action !== "addPoint") {
+      if (
+        this.lines.length > 0 &&
+        this.pointover(x, y).indexPoint >= 0 &&
+        this.$store.state.action !== "addPoint"
+      ) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
 

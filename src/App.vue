@@ -1,11 +1,13 @@
 <template>
-  <CreateLine />
-  <GetImg />
+  <v-app>
+    <ToolBar />
+    <GetImg />
+  </v-app>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import CreateLine from "./components/CreateLine.vue";
+import ToolBar from "./components/ToolBar.vue";
 import GetImg from "./components/GetImg.vue";
 
 export default defineComponent({
@@ -13,7 +15,7 @@ export default defineComponent({
 
   components: {
     GetImg,
-    CreateLine,
+    ToolBar,
   },
 
   data() {
@@ -31,12 +33,18 @@ export default defineComponent({
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   display: grid;
-  grid-template-rows: 10% 90%;
-  height: 100vh;
 }
 
 input {
   border: 1px solid #000;
   padding: 0.25em;
+}
+
+.v-app-bar {
+  position: static;
+}
+
+.v-layout {
+  overflow: hidden;
 }
 </style>
