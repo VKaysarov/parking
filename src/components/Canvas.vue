@@ -199,7 +199,10 @@ export default defineComponent({
 
       setTimeout(() => {
         canvas.style.zIndex = "0";
-        if (this.$store.state.action === "movePoint") {
+        if (
+          this.$store.state.action === "movePoint" ||
+          this.$store.state.action === "moveDelta"
+        ) {
           this.$store.dispatch("changeAction", "waitAction");
         }
         this.movePoint.state = false;
@@ -240,7 +243,7 @@ export default defineComponent({
 
         if (
           (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
-          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
+            this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
           this.$store.state.action === "waitAction"
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
@@ -339,9 +342,9 @@ export default defineComponent({
 
       if (isNaN(parkingSizeNumber) || parkingSizeNumber > 999) {
         const newParkingSize = parkingSizeString.slice(0, -1);
-        this.lines[this.indexSelectedLine].main_line.attributes.parking_size = Number(newParkingSize);
+        this.lines[this.indexSelectedLine].main_line.attributes.parking_size =
+          Number(newParkingSize);
       }
-
     },
 
     // Отрисовка разметки
@@ -439,7 +442,7 @@ export default defineComponent({
     });
     addEventListener("keypress", (event: KeyboardEvent) => {
       const parkingSize = this.$refs.parkingSize as HTMLElement;
-      
+
       if (event.key === "Enter") {
         event.preventDefault();
         parkingSize.blur();
