@@ -388,8 +388,10 @@ export default defineComponent({
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
       const { code } = event;
+      const { indexSelectedLine } = this;
       const canvas = this.$refs.canvas as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      const contextMenu = this.$refs.contextMenu as HTMLElement;
 
       if (event.key === "Control") {
         this.$store.dispatch("changeAction", "waitAction");
@@ -399,7 +401,7 @@ export default defineComponent({
         this.$store.dispatch("endDraw");
       }
       if (code === "Delete") {
-        let currentLine = this.lines[this.indexSelectedLine].main_line;
+        let currentLine = this.lines[indexSelectedLine].main_line;
         if (currentLine.points.length < 1) {
           return "Точек нет, нечего удалять";
         }
@@ -407,7 +409,8 @@ export default defineComponent({
         this.indexStartPoint = currentLine.points.length - 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (this.indexStartPoint === -1) {
-          this.lines.splice(this.indexSelectedLine, 1);
+          this.visibleContextMenu = false;
+          this.lines.splice(indexSelectedLine, 1);
           this.indexSelectedLine = this.lines.length - 1;
           this.$store.dispatch("endDraw");
         }
