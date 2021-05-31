@@ -36,6 +36,10 @@ export default defineComponent({
 </script>
 
 <style>
+img {
+  user-select: none;
+}
+
 #canvas-wrapper {
   position: relative;
   max-height: calc(100% - 64px);

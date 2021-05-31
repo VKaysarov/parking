@@ -129,31 +129,43 @@ export default defineComponent({
         addPointOnLine(this, x, y);
       }
 
+      // Выбор точки на линии
       if (this.$store.state.action === "downPoint") {
-        // Выбор точки на линии
         if (selectPointOnLine(this, x, y)) {
           return;
         }
       }
 
       // Выбор линии разметки
-      for (let [index, line] of this.lines.entries()) {
-        const attributes = line.main_line.attributes;
-        if (ctxFill.isPointInPath(attributes.path, x, y)) {
-          this.indexSelectedLine = index;
-          attributes.selected = true;
-          return;
+      if (this.$store.state.action !== "selectedLine") {
+        for (let [index, line] of this.lines.entries()) {
+          const attributes = line.main_line.attributes;
+  
+          if (ctxFill.isPointInPath(attributes.path, x, y)) {
+            this.$store.dispatch("changeAction", "selectedLine");
+            this.indexSelectedLine = index;
+            attributes.selected = true;
+  
+            return;
+          }
         }
+      }
+
+      // Сброс выделения разметки линии
+      if (this.$store.state.action === "selectedLine") {
+        
+        for (let line of this.lines) {
+          line.main_line.attributes.selected = false;
+        }
+
+        this.visibleContextMenu = false;
+        this.$store.dispatch("changeAction", "waitAction");
+
+        return;
       }
 
       // Начало рисования основной линии
       if (this.$store.state.action === "waitAction") {
-        // Сброс выделения разметки линии
-        for (let line of this.lines) {
-          if (line.main_line.attributes.selected) {
-            line.main_line.attributes.selected = false;
-          }
-        }
         this.indexSelectedLine = this.lines.length;
         this.startDraw(event);
         return;
@@ -271,7 +283,7 @@ export default defineComponent({
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.$store.dispatch("changeAction", "waitAction");
+        this.$store.dispatch("changeAction", "selectedLine");
       }
     },
 
