@@ -111,8 +111,8 @@ export default defineComponent({
       };
       lines.push(line);
       this.indexStartPoint = 0;
-      this.$store.dispatch("startDraw");
       this.$store.dispatch("savePoint", lines);
+      this.$store.dispatch("changeAction", "drawLine");
     },
     handleClick(event: MouseEvent) {
       const x = event.offsetX;
@@ -126,18 +126,10 @@ export default defineComponent({
         addPointOnLine(this, x, y);
       }
 
-      if (
-        this.lines.length > 0 &&
-        !this.$store.state.drawLine &&
-        this.$store.state.action != "movePoint"
-      ) {
+      if (this.$store.state.action === "downPoint") {
         // Выбор точки на линии
         if (selectPointOnLine(this, x, y)) {
           return "Selected";
-        }
-        // Сброс выделения разметки линии
-        for (let line of this.lines) {
-          line.main_line.attributes.selected = false;
         }
       }
 
@@ -152,11 +144,14 @@ export default defineComponent({
       }
 
       // Начало рисования основной линии
-      if (
-        !this.$store.state.drawLine &&
-        this.$store.state.action != "movePoint" &&
-        !this.visibleContextMenu
-      ) {
+      if (this.$store.state.action === "waitAction") {
+        // Сброс выделения разметки линии
+        for (let line of this.lines) {
+          if (line.main_line.attributes.selected) {
+            line.main_line.attributes.selected = false;
+            return "Stripped off select";
+          }
+        }
         this.indexSelectedLine = this.lines.length;
         this.startDraw(event);
         return "Start drawing";
@@ -164,7 +159,7 @@ export default defineComponent({
       this.visibleContextMenu = false;
 
       // Продолжение рисования основной линий
-      if (this.$store.state.drawLine) {
+      if (this.$store.state.action === "drawLine") {
         drawLine(this, x, y);
       }
     },
@@ -175,7 +170,7 @@ export default defineComponent({
       // Нажатие на точку
       let { indexPoint, indexLine } = this.pointover(x, y);
       if (this.lines.length > 0 && indexPoint >= 0) {
-        this.downPoint = true;
+        this.$store.dispatch("changeAction", "downPoint");
         this.movePoint.index = indexPoint;
         this.movePoint.indexLine = indexLine;
       }
@@ -198,12 +193,11 @@ export default defineComponent({
     },
     mouseupPoint() {
       const canvas = this.$refs.canvas as HTMLCanvasElement;
-      this.downPoint = false;
       this.indexDeltaLine = -1;
 
       setTimeout(() => {
         canvas.style.zIndex = "0";
-        if (this.$store.state.action !== "addPoint") {
+        if (this.$store.state.action === "movePoint") {
           this.$store.dispatch("changeAction", "waitAction");
         }
         this.movePoint.state = false;
@@ -216,23 +210,20 @@ export default defineComponent({
       const y = event.offsetY;
 
       // Анимация отрисовки линии
-      if (this.$store.state.drawLine) {
+      if (this.$store.state.action === "drawLine") {
         animationDrawingLine(this, x, y);
       }
 
       // Сброс стилей мыши
-      if (
-        this.$store.state.action === "waitAction" ||
-        this.$store.state.action === "pointerPoint"
-      ) {
-        this.$store.dispatch("changeAction", "auto");
+      if (this.$store.state.action === "pointerPoint") {
+        this.$store.dispatch("changeAction", "waitAction");
       }
 
       // Если мы навелись мышкой на точку
       if (
         this.lines.length > 0 &&
         this.pointover(x, y).indexPoint >= 0 &&
-        this.$store.state.action !== "addPoint"
+        this.$store.state.action === "waitAction"
       ) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
@@ -254,7 +245,10 @@ export default defineComponent({
       }
 
       // Перетаскивание точки
-      if (this.downPoint && !this.$store.state.drawLine) {
+      if (
+        this.$store.state.action === "downPoint" ||
+        this.$store.state.action === "movePoint"
+      ) {
         canvas.style.zIndex = "1";
         dragPoint(this, x, y);
       }
@@ -322,12 +316,13 @@ export default defineComponent({
       return { indexLine: -1, indexPoint: -1 };
     },
     endDraw() {
-      if (this.$store.state.drawLine) {
+      if (this.$store.state.action === "drawLine") {
         const canvas = this.$refs.canvas as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.$store.dispatch("endDraw");
+        // this.$store.dispatch("endDraw");
+        this.$store.dispatch("changeAction", "waitAction");
       }
     },
     submitData() {
@@ -401,14 +396,13 @@ export default defineComponent({
       const { indexSelectedLine } = this;
       const canvas = this.$refs.canvas as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-      const contextMenu = this.$refs.contextMenu as HTMLElement;
 
       if (event.key === "Control") {
         this.$store.dispatch("changeAction", "waitAction");
       }
       if (code === "Escape") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.$store.dispatch("endDraw");
+        this.$store.dispatch("changeAction", "waitAction");
       }
       if (code === "Delete") {
         let currentLine = this.lines[indexSelectedLine].main_line;
@@ -422,7 +416,7 @@ export default defineComponent({
           this.visibleContextMenu = false;
           this.lines.splice(indexSelectedLine, 1);
           this.indexSelectedLine = this.lines.length - 1;
-          this.$store.dispatch("endDraw");
+          this.$store.dispatch("changeAction", "waitAction");
         }
       }
     });

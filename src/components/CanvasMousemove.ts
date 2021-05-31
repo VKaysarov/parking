@@ -74,7 +74,7 @@ function dragDelta(self: any, x: number, y: number): void {
 
   line.delta = delta;
   self.$store.dispatch("savePoint", lines);
-  self.$store.dispatch("changeAction", "movePoint");
+  self.$store.dispatch("changeAction", "moveDelta");
 }
 
 export { animationDrawingLine, dragPoint, dragDelta };

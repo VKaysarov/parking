@@ -5,7 +5,7 @@ export default createStore({
     lines: [] as parkingPlacesArrayType,
     drawLine: false,
     addPoint: false,
-    action: "auto",
+    action: "waitAction",
   },
   mutations: {
     SAVE_POINT(state, lines) {

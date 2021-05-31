@@ -17,27 +17,25 @@ function addPointOnLine(self: any, x: number, y: number) {
 }
 
 function selectPointOnLine(self: any, x: number, y: number) {
+  const { lines } = self;
   const { indexPoint, indexLine } = self.pointover(x, y);
+  const currentLine = lines[indexLine].main_line;
+  const delta = currentLine.delta;
 
-  if (indexPoint != -1) {
-    const { lines } = self;
-    const currentLine = lines[indexLine].main_line;
-    const delta = currentLine.delta;
-
-    for (const point of currentLine.points) {
-      point.joinedDelta = false;
-    }
-
-    currentLine.points[indexPoint].joinedDelta = true;
-    currentLine.attributes.selected = true;
-    delta.x = x - delta.len.x;
-    delta.y = y - delta.len.y;
-
-    self.indexStartPoint = indexPoint;
-    self.indexSelectedLine = indexLine;
-
-    return true;
+  for (const point of currentLine.points) {
+    point.joinedDelta = false;
   }
+
+  currentLine.points[indexPoint].joinedDelta = true;
+  currentLine.attributes.selected = true;
+  delta.x = x - delta.len.x;
+  delta.y = y - delta.len.y;
+
+  self.indexStartPoint = indexPoint;
+  self.indexSelectedLine = indexLine;
+  self.$store.dispatch("changeAction", "waitAction");
+
+  return true;
 }
 
 function drawLine(self: any, x: number, y: number): void {
