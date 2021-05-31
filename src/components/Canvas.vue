@@ -28,6 +28,7 @@
         type="text"
         class="parking-count--small"
         v-model="lines[indexSelectedLine].main_line.attributes.parking_size"
+        @input="validationParkingPlace"
       />
       <v-btn
         @click="
@@ -68,7 +69,6 @@ export default defineComponent({
       indexStartPoint: 0,
       indexDeltaLine: -1,
       moveLine: false,
-      downPoint: false,
       visibleContextMenu: false,
       movePoint: {
         index: -1,
@@ -78,6 +78,7 @@ export default defineComponent({
     };
   },
   methods: {
+    // События мыши
     startDraw(event: MouseEvent) {
       const { lines } = this;
       const id = 0;
@@ -149,7 +150,6 @@ export default defineComponent({
         for (let line of this.lines) {
           if (line.main_line.attributes.selected) {
             line.main_line.attributes.selected = false;
-            return;
           }
         }
         this.indexSelectedLine = this.lines.length;
@@ -237,8 +237,9 @@ export default defineComponent({
         };
 
         if (
-          this.comparisonCordPoints(x, y, delta.x, delta.y) ||
-          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)
+          (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
+          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
+          this.$store.state.action === "waitAction"
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
@@ -254,14 +255,26 @@ export default defineComponent({
       }
 
       // Перетаскивание дельты
-      if (this.indexDeltaLine != -1) {
+      if (this.indexDeltaLine !== -1) {
         canvas.style.zIndex = "1";
         dragDelta(this, x, y);
       }
     },
+    endDraw() {
+      if (this.$store.state.action === "drawLine") {
+        const canvas = this.$refs.canvas as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.$store.dispatch("changeAction", "waitAction");
+      }
+    },
+
+    // Сравнение координат двух точек
     comparisonCordPoints(x1: number, y1: number, x2: number, y2: number) {
       return !!(x1 > x2 - 15 && x1 < x2 + 15 && y1 > y2 - 15 && y1 < y2 + 15);
     },
+    // Сравнение координат мыши и точки
     pointover(mouseX: number, mouseY: number) {
       for (let [indexLine, line] of this.lines.entries()) {
         for (let [indexPoint, point] of line.main_line.points.entries()) {
@@ -315,19 +328,24 @@ export default defineComponent({
       }
       return { indexLine: -1, indexPoint: -1 };
     },
-    endDraw() {
-      if (this.$store.state.action === "drawLine") {
-        const canvas = this.$refs.canvas as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // this.$store.dispatch("endDraw");
-        this.$store.dispatch("changeAction", "waitAction");
-      }
-    },
+    // Валидация поля 'количество парковочных мест'
     submitData() {
       this.visibleContextMenu = false;
     },
+    validationParkingPlace() {
+      const mainLine = this.lines[this.indexSelectedLine].main_line;
+      const parkingSizeString = String(mainLine.attributes.parking_size);
+      const parkingSizeNumber = Number(parkingSizeString);
+
+      if (isNaN(parkingSizeNumber) || parkingSizeNumber > 999) {
+        const newParkingSize = parkingSizeString.slice(0, -1);
+        this.lines[this.indexSelectedLine].main_line.attributes.parking_size = Number(newParkingSize);
+      }
+
+    },
+
+    // Отрисовка разметки
     render() {
       const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -455,5 +473,6 @@ export default defineComponent({
   text-align: center;
   max-width: 40px;
   margin-right: 10px;
+  background-color: #fff;
 }
 </style>
