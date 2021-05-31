@@ -14,7 +14,7 @@
       @click="handleClick"
       @contextmenu.prevent="endDraw"
       @mousemove="mousemove"
-      @mousedown="mousedownPoint"
+      @mousedown="handleMousedown"
       @mouseup="mouseupPoint"
       >Not supported Canvas</canvas
     >
@@ -168,7 +168,7 @@ export default defineComponent({
         drawLine(this, x, y);
       }
     },
-    mousedownPoint(event: MouseEvent) {
+    handleMousedown(event: MouseEvent) {
       const x = event.offsetX;
       const y = event.offsetY;
 
@@ -182,13 +182,15 @@ export default defineComponent({
 
       // Нажатие на дельту
       for (let [index, line] of this.lines.entries()) {
+        const delta = line.main_line.delta;
+        const reverseDelta = {
+          x: delta.x + 2 * delta.len.x,
+          y: delta.y + 2 * delta.len.y,
+        };
+
         if (
-          this.comparisonCordPoints(
-            x,
-            y,
-            line.main_line.delta.x,
-            line.main_line.delta.y
-          )
+          this.comparisonCordPoints(x, y, delta.x, delta.y) ||
+          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)
         ) {
           this.indexDeltaLine = index;
         }
@@ -238,7 +240,15 @@ export default defineComponent({
       // Если мы навелись мышкой на точку дельты
       for (let line of this.lines) {
         const delta = line.main_line.delta;
-        if (this.comparisonCordPoints(x, y, delta.x, delta.y)) {
+        const reverseDelta = {
+          x: delta.x + 2 * delta.len.x,
+          y: delta.y + 2 * delta.len.y,
+        };
+
+        if (
+          this.comparisonCordPoints(x, y, delta.x, delta.y) ||
+          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)
+        ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
       }

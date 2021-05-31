@@ -79,6 +79,10 @@ function renderDelta(
 
     // Отрисовка отзеркаленой линии дельты
     self.renderLine(ctx, pointX, pointY, reverseDelta.x, reverseDelta.y);
+
+    // Рисование точки для отзеркаленой дельты
+    circle.arc(reverseDelta.x, reverseDelta.y, 5, 0, 2 * Math.PI);
+    ctx.fill(circle);
   }
 }
 
