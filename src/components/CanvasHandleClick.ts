@@ -17,8 +17,9 @@ function addPointOnLine(self: any, x: number, y: number) {
 }
 
 function selectPointOnLine(self: any, x: number, y: number) {
-  const { lines } = self;
   const { indexPoint, indexLine } = self.pointover(x, y);
+
+  const { lines } = self;
   const currentLine = lines[indexLine].main_line;
   const delta = currentLine.delta;
 
@@ -33,6 +34,7 @@ function selectPointOnLine(self: any, x: number, y: number) {
 
   self.indexStartPoint = indexPoint;
   self.indexSelectedLine = indexLine;
+
   self.$store.dispatch("changeAction", "waitAction");
 
   return true;

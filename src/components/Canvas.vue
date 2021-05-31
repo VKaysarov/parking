@@ -129,7 +129,7 @@ export default defineComponent({
       if (this.$store.state.action === "downPoint") {
         // Выбор точки на линии
         if (selectPointOnLine(this, x, y)) {
-          return "Selected";
+          return;
         }
       }
 
@@ -139,7 +139,7 @@ export default defineComponent({
         if (ctxFill.isPointInPath(attributes.path, x, y)) {
           this.indexSelectedLine = index;
           attributes.selected = true;
-          return "Selected Line";
+          return;
         }
       }
 
@@ -149,12 +149,12 @@ export default defineComponent({
         for (let line of this.lines) {
           if (line.main_line.attributes.selected) {
             line.main_line.attributes.selected = false;
-            return "Stripped off select";
+            return;
           }
         }
         this.indexSelectedLine = this.lines.length;
         this.startDraw(event);
-        return "Start drawing";
+        return;
       }
       this.visibleContextMenu = false;
 
