@@ -26,9 +26,11 @@
     >
       <input
         type="text"
+        ref="parkingSize"
         class="parking-count--small"
         v-model="lines[indexSelectedLine].main_line.attributes.parking_size"
         @input="validationParkingPlace"
+        @focus="$event.target.select()"
       />
       <v-btn
         @click="
@@ -330,9 +332,6 @@ export default defineComponent({
     },
 
     // Валидация поля 'количество парковочных мест'
-    submitData() {
-      this.visibleContextMenu = false;
-    },
     validationParkingPlace() {
       const mainLine = this.lines[this.indexSelectedLine].main_line;
       const parkingSizeString = String(mainLine.attributes.parking_size);
@@ -439,9 +438,11 @@ export default defineComponent({
       }
     });
     addEventListener("keypress", (event: KeyboardEvent) => {
+      const parkingSize = this.$refs.parkingSize as HTMLElement;
+      
       if (event.key === "Enter") {
         event.preventDefault();
-        this.submitData();
+        parkingSize.blur();
       }
     });
   },
