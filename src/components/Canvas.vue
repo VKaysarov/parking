@@ -127,21 +127,23 @@ export default defineComponent({
       // Добавление точки на линии
       if (this.$store.state.action === "addPoint") {
         addPointOnLine(this, x, y);
+        return;
       }
 
       // Выбор точки на линии
       if (this.$store.state.action === "downPoint") {
-        if (selectPointOnLine(this, x, y)) {
-          return;
-        }
+        selectPointOnLine(this, x, y);
+        return;
       }
-
+      
       // Выбор линии разметки
       if (this.$store.state.action !== "selectedLine") {
+
         for (let [index, line] of this.lines.entries()) {
           const attributes = line.main_line.attributes;
   
           if (ctxFill.isPointInPath(attributes.path, x, y)) {
+            
             this.$store.dispatch("changeAction", "selectedLine");
             this.indexSelectedLine = index;
             attributes.selected = true;
@@ -233,14 +235,14 @@ export default defineComponent({
 
       // Сброс стилей мыши
       if (this.$store.state.action === "pointerPoint") {
-        this.$store.dispatch("changeAction", "waitAction");
+        this.$store.dispatch("changeAction", "selectedLine");
       }
 
       // Если мы навелись мышкой на точку
       if (
         this.lines.length > 0 &&
         this.pointover(x, y).indexPoint >= 0 &&
-        this.$store.state.action === "waitAction"
+        this.$store.state.action === "selectedLine"
       ) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
@@ -256,7 +258,7 @@ export default defineComponent({
         if (
           (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
             this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
-          this.$store.state.action === "waitAction"
+          this.$store.state.action === "selectedLine"
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
@@ -430,12 +432,14 @@ export default defineComponent({
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
       if (event.key === "Control") {
-        this.$store.dispatch("changeAction", "waitAction");
+        this.$store.dispatch("changeAction", "selectedLine");
       }
+
       if (code === "Escape") {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.$store.dispatch("changeAction", "waitAction");
       }
+
       if (code === "Delete") {
         let currentLine = this.lines[indexSelectedLine].main_line;
         if (currentLine.points.length < 1) {
