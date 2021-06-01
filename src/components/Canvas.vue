@@ -125,13 +125,13 @@ export default defineComponent({
       const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
       // Добавление точки на линии
-      if (this.$store.state.action === "addPoint") {
+      if (this.defineAction("addPoint")) {
         addPointOnLine(this, x, y);
         return;
       }
 
       // Выбор точки на линии
-      if (this.$store.state.action === "downPoint") {
+      if (this.defineAction("downPoint")) {
         selectPointOnLine(this, x, y);
         return;
       }
@@ -152,7 +152,7 @@ export default defineComponent({
       }
 
       // Сброс выделения разметки линии
-      if (this.$store.state.action === "selectedLine") {
+      if (this.defineAction("selectedLine")) {
         for (let line of this.lines) {
           line.main_line.attributes.selected = false;
         }
@@ -164,7 +164,7 @@ export default defineComponent({
       }
 
       // Начало рисования основной линии
-      if (this.$store.state.action === "waitAction") {
+      if (this.defineAction("waitAction")) {
         this.$store.dispatch("selectLine", this.lines.length);
         this.startDraw(event);
         return;
@@ -172,7 +172,7 @@ export default defineComponent({
       this.visibleContextMenu = false;
 
       // Продолжение рисования основной линий
-      if (this.$store.state.action === "drawLine") {
+      if (this.defineAction("drawLine")) {
         drawLine(this, x, y);
       }
     },
@@ -211,8 +211,8 @@ export default defineComponent({
       setTimeout(() => {
         canvas.style.zIndex = "0";
         if (
-          this.$store.state.action === "movePoint" ||
-          this.$store.state.action === "moveDelta"
+          this.defineAction("movePoint") ||
+          this.defineAction("moveDelta")
         ) {
           this.$store.dispatch("changeAction", "waitAction");
         }
@@ -226,12 +226,12 @@ export default defineComponent({
       const y = event.offsetY;
 
       // Анимация отрисовки линии
-      if (this.$store.state.action === "drawLine") {
+      if (this.defineAction("drawLine")) {
         animationDrawingLine(this, x, y);
       }
 
       // Сброс стилей мыши
-      if (this.$store.state.action === "pointerPoint") {
+      if (this.defineAction("pointerPoint")) {
         this.$store.dispatch("changeAction", "selectedLine");
       }
 
@@ -239,7 +239,7 @@ export default defineComponent({
       if (
         this.lines.length > 0 &&
         this.pointover(x, y).indexPoint >= 0 &&
-        this.$store.state.action === "selectedLine"
+        this.defineAction("selectedLine")
       ) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
@@ -255,17 +255,14 @@ export default defineComponent({
         if (
           (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
             this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
-          this.$store.state.action === "selectedLine"
+          this.defineAction("selectedLine")
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
       }
 
       // Перетаскивание точки
-      if (
-        this.$store.state.action === "downPoint" ||
-        this.$store.state.action === "movePoint"
-      ) {
+      if (this.defineAction("downPoint") || this.defineAction("movePoint")) {
         canvas.style.zIndex = "1";
         dragPoint(this, x, y);
       }
@@ -277,13 +274,16 @@ export default defineComponent({
       }
     },
     endDraw() {
-      if (this.$store.state.action === "drawLine") {
+      if (this.defineAction("drawLine")) {
         const canvas = this.$refs.canvas as HTMLCanvasElement;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.$store.dispatch("changeAction", "selectedLine");
       }
+    },
+    defineAction(action: string) {
+      return this.$store.state.action === action;
     },
 
     // Сравнение координат двух точек
