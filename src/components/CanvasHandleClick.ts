@@ -51,4 +51,10 @@ function drawLine(self: any, x: number, y: number): void {
   self.$store.dispatch("savePoint", lines);
 }
 
-export { addPointOnLine, selectPointOnLine, drawLine };
+function dischargeSelectedLine(self: any): void {
+  for (const line of self.lines) {
+    line.main_line.attributes.selected = false;
+  }
+}
+
+export { addPointOnLine, selectPointOnLine, drawLine, dischargeSelectedLine };

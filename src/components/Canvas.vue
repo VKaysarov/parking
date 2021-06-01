@@ -57,6 +57,7 @@ import {
   addPointOnLine,
   selectPointOnLine,
   drawLine,
+  dischargeSelectedLine,
 } from "./CanvasHandleClick";
 import { renderMainLine, renderAreaLine, renderDelta } from "./CanvasRender";
 
@@ -137,26 +138,21 @@ export default defineComponent({
       }
 
       // Выбор линии разметки
-      if (this.$store.state.action !== "selectedLine") {
-        for (let [index, line] of this.lines.entries()) {
-          const attributes = line.main_line.attributes;
+      for (let [index, line] of this.lines.entries()) {
+        const attributes = line.main_line.attributes;
 
-          if (ctxFill.isPointInPath(attributes.path, x, y)) {
-            this.$store.dispatch("changeAction", "selectedLine");
-            this.$store.dispatch("selectLine", index);
-            attributes.selected = true;
-
-            return;
-          }
+        if (ctxFill.isPointInPath(attributes.path, x, y)) {
+          dischargeSelectedLine(this);
+          this.$store.dispatch("changeAction", "selectedLine");
+          this.$store.dispatch("selectLine", index);
+          attributes.selected = true;
+          return;
         }
       }
 
       // Сброс выделения разметки линии
       if (this.defineAction("selectedLine")) {
-        for (let line of this.lines) {
-          line.main_line.attributes.selected = false;
-        }
-
+        dischargeSelectedLine(this);
         this.visibleContextMenu = false;
         this.$store.dispatch("changeAction", "waitAction");
 
@@ -210,10 +206,7 @@ export default defineComponent({
 
       setTimeout(() => {
         canvas.style.zIndex = "0";
-        if (
-          this.defineAction("movePoint") ||
-          this.defineAction("moveDelta")
-        ) {
+        if (this.defineAction("movePoint") || this.defineAction("moveDelta")) {
           this.$store.dispatch("changeAction", "waitAction");
         }
         this.movePoint.state = false;
