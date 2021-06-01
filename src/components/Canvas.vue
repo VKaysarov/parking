@@ -258,7 +258,7 @@ export default defineComponent({
         if (
           (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
             this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
-          this.$store.state.action === "selectedLine"
+          this.$store.state.action === "waitAction"
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
@@ -440,15 +440,14 @@ export default defineComponent({
         this.$store.dispatch("changeAction", "waitAction");
       }
 
-      if (code === "Delete") {
-        let currentLine = this.lines[indexSelectedLine].main_line;
-        if (currentLine.points.length < 1) {
-          return "Точек нет, нечего удалять";
-        }
+      // удаление точек
+      if (code === "Delete" && this.lines.length > 0) {
+        const currentLine = this.lines[indexSelectedLine].main_line;
+
         currentLine.points.splice(this.indexStartPoint, 1);
         this.indexStartPoint = currentLine.points.length - 1;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (this.indexStartPoint === -1) {
+        if (currentLine.points.length < 2) {
           this.visibleContextMenu = false;
           this.lines.splice(indexSelectedLine, 1);
           this.indexSelectedLine = this.lines.length - 1;
