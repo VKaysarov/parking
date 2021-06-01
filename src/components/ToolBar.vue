@@ -64,8 +64,9 @@ export default defineComponent({
         line.main_line.attributes.selected = false;
       }
       mainLine.attributes.selected = true;
-      this.$store.dispatch("savePoint", this.lines);
       this.$store.dispatch("selectLine", index);
+      this.$store.dispatch("savePoint", this.lines);
+      this.$store.dispatch("changeAction", "selectedLine");
     },
     lineInfo(mainLine: IMainLine) {
       if (mainLine.attributes.disabled) {
