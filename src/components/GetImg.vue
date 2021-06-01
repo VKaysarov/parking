@@ -26,9 +26,10 @@ export default defineComponent({
   computed: {
     classObject: function () {
       return {
-        addPoint: this.$store.state.action == "addPoint",
-        movePoint: this.$store.state.action == "movePoint",
-        pointerPoint: this.$store.state.action == "pointerPoint",
+        addPoint: this.$store.state.action === "addPoint",
+        movePoint: this.$store.state.action === "movePoint",
+        moveDelta: this.$store.state.action === "moveDelta",
+        pointerPoint: this.$store.state.action === "pointerPoint",
       };
     },
   },
@@ -64,7 +65,7 @@ img {
   cursor: cell;
 }
 
-.movePoint {
+.movePoint, .moveDelta {
   cursor: grabbing;
 }
 

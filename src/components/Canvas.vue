@@ -135,18 +135,17 @@ export default defineComponent({
         selectPointOnLine(this, x, y);
         return;
       }
-      
+
       // Выбор линии разметки
       if (this.$store.state.action !== "selectedLine") {
-
         for (let [index, line] of this.lines.entries()) {
           const attributes = line.main_line.attributes;
-  
+
           if (ctxFill.isPointInPath(attributes.path, x, y)) {
             this.$store.dispatch("changeAction", "selectedLine");
             this.$store.dispatch("selectLine", index);
             attributes.selected = true;
-  
+
             return;
           }
         }
@@ -154,7 +153,6 @@ export default defineComponent({
 
       // Сброс выделения разметки линии
       if (this.$store.state.action === "selectedLine") {
-        
         for (let line of this.lines) {
           line.main_line.attributes.selected = false;
         }
@@ -257,7 +255,7 @@ export default defineComponent({
         if (
           (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
             this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
-          this.$store.state.action === "waitAction"
+          this.$store.state.action === "selectedLine"
         ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
