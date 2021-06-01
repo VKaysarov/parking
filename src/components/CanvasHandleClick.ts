@@ -1,4 +1,4 @@
-function addPointOnLine(self: any, x: number, y: number) {
+function addPointOnLine(self: any, x: number, y: number): void {
   const { indexLine, indexPoint } = self.lineover(x, y);
   const points = self.lines[indexLine].main_line.points;
   const point = {
@@ -12,11 +12,9 @@ function addPointOnLine(self: any, x: number, y: number) {
 
   self.lines[indexLine].main_line.points = points;
   self.$store.dispatch("savePoint", self.lines);
-
-  return true;
 }
 
-function selectPointOnLine(self: any, x: number, y: number) {
+function selectPointOnLine(self: any, x: number, y: number): void {
   const { indexPoint, indexLine } = self.pointover(x, y);
   const { lines } = self;
   const currentLine = lines[indexLine].main_line;

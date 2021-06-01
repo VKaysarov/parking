@@ -35,7 +35,7 @@
           </span>
           {{ lineInfo(line.main_line) }}
         </v-card>
-        <v-card block tile @click="selectLine(line.main_line)" v-else>
+        <v-card block tile @click="selectLine(line.main_line, index)" v-else>
           <span class="v-btn__left-item">
             {{ `Line ${index + 1} ` }}
           </span>
@@ -59,12 +59,13 @@ export default defineComponent({
     };
   },
   methods: {
-    selectLine(mainLine: IMainLine) {
+    selectLine(mainLine: IMainLine, index: number) {
       for (let line of this.lines) {
         line.main_line.attributes.selected = false;
       }
       mainLine.attributes.selected = true;
       this.$store.dispatch("savePoint", this.lines);
+      this.$store.dispatch("selectLine", index);
     },
     lineInfo(mainLine: IMainLine) {
       if (mainLine.attributes.disabled) {

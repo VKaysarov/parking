@@ -143,9 +143,8 @@ export default defineComponent({
           const attributes = line.main_line.attributes;
   
           if (ctxFill.isPointInPath(attributes.path, x, y)) {
-            
             this.$store.dispatch("changeAction", "selectedLine");
-            this.indexSelectedLine = index;
+            this.$store.dispatch("selectLine", index);
             attributes.selected = true;
   
             return;
@@ -168,7 +167,7 @@ export default defineComponent({
 
       // Начало рисования основной линии
       if (this.$store.state.action === "waitAction") {
-        this.indexSelectedLine = this.lines.length;
+        this.$store.dispatch("selectLine", this.lines.length);
         this.startDraw(event);
         return;
       }
@@ -374,6 +373,7 @@ export default defineComponent({
       canvasFill.height = canvasFill.offsetHeight;
 
       this.lines = this.$store.state.lines;
+      this.indexSelectedLine = this.$store.state.selectedLine;
 
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
