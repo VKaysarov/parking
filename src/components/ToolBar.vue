@@ -8,16 +8,24 @@
 
     <v-spacer></v-spacer>
 
-    <v-btn icon>
-      <v-icon>mdi-magnify</v-icon>
+    <div>
+      <label class="img-search">
+        <v-icon class="img-search__icon">mdi-magnify</v-icon>
+        <input
+          type="text"
+          class="img-search__field"
+          v-model="imgId"
+          @change="this.$store.dispatch('changeImgId', imgId)"
+        />
+      </label>
+    </div>
+
+    <v-btn icon @click="this.$store.dispatch('decrementImgId')">
+      <v-icon>mdi-chevron-left</v-icon>
     </v-btn>
 
-    <v-btn icon>
-      <v-icon>mdi-heart</v-icon>
-    </v-btn>
-
-    <v-btn icon>
-      <v-icon>mdi-dots-vertical</v-icon>
+    <v-btn icon @click="this.$store.dispatch('incrementImgId')">
+      <v-icon>mdi-chevron-right</v-icon>
     </v-btn>
   </v-app-bar>
   <v-navigation-drawer v-model="drawer" absolute temporary>
@@ -56,6 +64,7 @@ export default defineComponent({
       lines: [] as parkingPlacesArrayType,
       drawer: false,
       group: null,
+      imgId: 1,
     };
   },
   methods: {
@@ -70,9 +79,9 @@ export default defineComponent({
     },
     lineInfo(mainLine: IMainLine) {
       if (mainLine.attributes.disabled) {
-        return `инвалидных ${mainLine.attributes.parking_size}`;
+        return `Инвалидных ${mainLine.attributes.parking_size}`;
       }
-      return `неинвалидных ${mainLine.attributes.parking_size}`;
+      return `Неинвалидных ${mainLine.attributes.parking_size}`;
     },
   },
   mounted() {
@@ -101,5 +110,31 @@ li > .v-card {
   padding: 0.4em 1.4em;
   box-shadow: 0px 3px 1px -2px rgb(0 0 0 / 20%),
     0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
+}
+
+.img-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.img-search__field {
+  max-width: 0;
+  padding-left: 2em;
+  border: none;
+  border-radius: 20px;
+  transition-duration: 0.25s;
+}
+
+.img-search__field:focus {
+  max-width: 200px;
+  background-color: #fff;
+}
+
+.img-search__icon {
+  color: #ccc;
+  position: absolute;
+  left: 5px;
 }
 </style>

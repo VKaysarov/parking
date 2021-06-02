@@ -5,6 +5,7 @@ export default createStore({
     lines: [] as parkingPlacesArrayType,
     action: "waitAction",
     selectedLine: 0,
+    imgId: 100,
   },
   mutations: {
     SAVE_POINT(state, lines) {
@@ -16,6 +17,15 @@ export default createStore({
     CHANGE_ACTION(state, action) {
       state.action = action;
     },
+    CHANGE_IMG_ID(state, id) {
+      state.imgId = id;
+    },
+    INCREMENT_IMG_ID(state) {
+      state.imgId++;
+    },
+    DECREMENT_IMG_ID(state) {
+      state.imgId--;
+    },
   },
   actions: {
     savePoint(context, lines) {
@@ -26,6 +36,15 @@ export default createStore({
     },
     changeAction(context, action) {
       context.commit("CHANGE_ACTION", action);
+    },
+    changeImgId(context, id) {
+      context.commit("CHANGE_IMG_ID", id);
+    },
+    incrementImgId(context) {
+      context.commit("INCREMENT_IMG_ID");
+    },
+    decrementImgId(context) {
+      context.commit("DECREMENT_IMG_ID");
     },
   },
   modules: {},
