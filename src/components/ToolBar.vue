@@ -1,4 +1,16 @@
 <template>
+  <div class="pop-up-wrapper" :class="{ isShow: popUp }">
+    <div class="pop-up">
+      <v-btn color="red" class="btn-close" @click="popUp = false" icon>
+        <v-icon>mdi-close</v-icon>
+      </v-btn>
+      <h2 class="pop-up__title">Вы уверены что хотите <br>   отправить разметку?</h2>
+      <div class="wrapper-btn">
+        <v-btn @click="submitData" color="primary" x-large>Да</v-btn>
+        <v-btn @click="popUp = false" color="primary" outlined x-large>Нет</v-btn>
+      </div>
+    </div>
+  </div>
   <v-app-bar color="primary">
     <v-app-bar-nav-icon
       @click="this.drawer = !this.drawer"
@@ -7,7 +19,7 @@
     <v-app-bar-title>Title</v-app-bar-title>
 
     <v-spacer></v-spacer>
-    <v-btn @click="submitData">Отправить разметку</v-btn>
+    <v-btn @click="popUp = true">Отправить разметку</v-btn>
     <v-spacer></v-spacer>
 
     <div>
@@ -65,6 +77,7 @@ export default defineComponent({
     return {
       lines: [] as parkingPlacesArrayType,
       drawer: false,
+      popUp: false,
       group: null,
       imgId: 1,
     };
@@ -126,6 +139,7 @@ export default defineComponent({
       });
       const result = await response.json();
       console.log(result);
+      this.popUp = false;
     },
   },
   mounted() {
@@ -156,6 +170,45 @@ li > .v-card {
     0px 2px 2px 0px rgb(0 0 0 / 14%), 0px 1px 5px 0px rgb(0 0 0 / 12%);
 }
 
+.pop-up-wrapper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.pop-up-wrapper.isShow {
+  z-index: 1;
+}
+
+.pop-up {
+  position: relative;
+  padding: 3em 4em 2em;
+  background-color: #fff;
+}
+
+.pop-up__title {
+  text-align: center;
+}
+
+.btn-close {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+}
+
+.wrapper-btn {
+  display: flex;
+  justify-content: center;
+}
+
+.wrapper-btn > .v-btn {
+  margin: 20px;
+}
+
 .img-search {
   position: relative;
   display: flex;
@@ -181,4 +234,5 @@ li > .v-card {
   position: absolute;
   left: 5px;
 }
+
 </style>
