@@ -17,10 +17,13 @@ function renderMainLine(
 }
 
 function renderAreaLine(
+  self: any,
   ctx: CanvasRenderingContext2D,
   mainLine: IMainLine
 ): void {
   const path = new Path2D();
+  const disabled = mainLine.attributes.disabled;
+  const { defaultParkingColor, invalidParkingColor } = self;
 
   mainLine.attributes.path = path;
 
@@ -28,8 +31,8 @@ function renderAreaLine(
     const end = mainLine.points[i];
     const x = end.x - mainLine.delta.len.x;
     const y = end.y - mainLine.delta.len.y;
-
-    ctx.fillStyle = "rgba(0, 200, 200, .5)";
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = disabled ? defaultParkingColor : invalidParkingColor;
     path.lineTo(x, y);
   }
   for (let i = mainLine.points.length - 1; i >= 0; i--) {
@@ -40,6 +43,7 @@ function renderAreaLine(
     path.lineTo(x, y);
   }
   ctx.fill(path);
+  ctx.globalAlpha = 1;
 }
 
 function renderDelta(
@@ -75,6 +79,10 @@ function renderDelta(
 
     // Отрисовка отзеркаленой линии дельты
     self.renderLine(ctx, pointX, pointY, reverseDelta.x, reverseDelta.y);
+
+    // Рисование точки для отзеркаленой дельты
+    circle.arc(reverseDelta.x, reverseDelta.y, 5, 0, 2 * Math.PI);
+    ctx.fill(circle);
   }
 }
 

@@ -14,15 +14,38 @@
       @click="handleClick"
       @contextmenu.prevent="endDraw"
       @mousemove="mousemove"
-      @mousedown="mousedownPoint"
+      @mousedown="handleMousedown"
       @mouseup="mouseupPoint"
       >Not supported Canvas</canvas
     >
-    <form ref="contextMenu" v-show="visibleContextMenu">
-      <div>
-        <label>Введите число парковочных мест: </label>
-        <input type="text" />
-      </div>
+    <form
+      ref="contextMenu"
+      class="data-line"
+      v-if="lines.length > 0"
+      v-show="visibleContextMenu"
+    >
+      <input
+        type="text"
+        ref="parkingSize"
+        class="parking-count--small"
+        v-model="lines[indexSelectedLine].main_line.attributes.parking_size"
+        @input="validationParkingPlace"
+        @focus="$event.target.select()"
+      />
+      <v-btn
+        @click="
+          lines[indexSelectedLine].main_line.attributes.disabled =
+            !lines[indexSelectedLine].main_line.attributes.disabled
+        "
+        :color="
+          lines[indexSelectedLine].main_line.attributes.disabled
+            ? defaultParkingColor
+            : invalidParkingColor
+        "
+        icon
+        tile
+        ><img src="/img/icon-disabled.svg" width="20" alt="icon-invalid"
+      /></v-btn>
     </form>
   </div>
 </template>
@@ -30,19 +53,25 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { animationDrawingLine, dragPoint, dragDelta } from "./CanvasMousemove";
-import { addPointOnLine, selectPointOnLine, drawLine } from "./CanvasHandleClick";
+import {
+  addPointOnLine,
+  selectPointOnLine,
+  drawLine,
+  dischargeSelectedLine,
+} from "./CanvasHandleClick";
 import { renderMainLine, renderAreaLine, renderDelta } from "./CanvasRender";
 
 export default defineComponent({
   name: "Canvas",
   data() {
     return {
-      indexStartLine: 0,
-      indexDeltaLine: -1,
-      indexStartPoint: 0,
       lines: [] as parkingPlacesArrayType,
+      defaultParkingColor: "#00fcff",
+      invalidParkingColor: "#6200ee",
+      indexSelectedLine: 0,
+      indexStartPoint: 0,
+      indexDeltaLine: -1,
       moveLine: false,
-      downPoint: false,
       visibleContextMenu: false,
       movePoint: {
         index: -1,
@@ -52,6 +81,7 @@ export default defineComponent({
     };
   },
   methods: {
+    // События мыши
     startDraw(event: MouseEvent) {
       const { lines } = this;
       const id = 0;
@@ -85,8 +115,8 @@ export default defineComponent({
       };
       lines.push(line);
       this.indexStartPoint = 0;
-      this.$store.dispatch("startDraw");
       this.$store.dispatch("savePoint", lines);
+      this.$store.dispatch("changeAction", "drawLine");
     },
     handleClick(event: MouseEvent) {
       const x = event.offsetX;
@@ -96,132 +126,164 @@ export default defineComponent({
       const ctxFill = canvasFill.getContext("2d") as CanvasRenderingContext2D;
 
       // Добавление точки на линии
-      if (this.$store.state.action === "addPoint") {
+      if (this.defineAction("addPoint")) {
         addPointOnLine(this, x, y);
+        return;
       }
 
-      if (
-        this.lines.length > 0 &&
-        !this.$store.state.drawLine &&
-        this.$store.state.action != "movePoint"
-      ) {
-        // Выбор точки на линии
-        if(selectPointOnLine(this, x, y)) {
-          return "Selected";
-        }
-        // Сброс выделения разметки линии
-        for (let line of this.lines) {
-          this.indexStartLine = this.lines.length;
-          line.main_line.attributes.selected = false;
-        }
+      // Выбор точки на линии
+      if (this.defineAction("downPoint")) {
+        selectPointOnLine(this, x, y);
+        return;
       }
 
       // Выбор линии разметки
-      for (let line of this.lines) {
+      for (let [index, line] of this.lines.entries()) {
         const attributes = line.main_line.attributes;
-        const points = line.main_line.points;
+
         if (ctxFill.isPointInPath(attributes.path, x, y)) {
+          dischargeSelectedLine(this);
+          this.$store.dispatch("changeAction", "selectedLine");
+          this.$store.dispatch("selectLine", index);
           attributes.selected = true;
-          return "Selected Line";
+          return;
         }
       }
 
+      // Сброс выделения разметки линии
+      if (this.defineAction("selectedLine")) {
+        dischargeSelectedLine(this);
+        this.visibleContextMenu = false;
+        this.$store.dispatch("changeAction", "waitAction");
+
+        return;
+      }
+
       // Начало рисования основной линии
-      if (
-        !this.$store.state.drawLine &&
-        this.$store.state.action != "movePoint" &&
-        !this.visibleContextMenu
-      ) {
+      if (this.defineAction("waitAction")) {
+        this.$store.dispatch("selectLine", this.lines.length);
         this.startDraw(event);
-        this.indexStartLine = this.lines.length - 1;
-        return "Start drawing";
+        return;
       }
       this.visibleContextMenu = false;
 
       // Продолжение рисования основной линий
-      if (this.$store.state.drawLine) {
+      if (this.defineAction("drawLine")) {
         drawLine(this, x, y);
       }
     },
-    mousedownPoint(event: MouseEvent) {
+    handleMousedown(event: MouseEvent) {
       const x = event.offsetX;
       const y = event.offsetY;
 
       // Нажатие на точку
       let { indexPoint, indexLine } = this.pointover(x, y);
       if (this.lines.length > 0 && indexPoint >= 0) {
-        this.downPoint = true;
+        this.$store.dispatch("changeAction", "downPoint");
         this.movePoint.index = indexPoint;
         this.movePoint.indexLine = indexLine;
       }
 
       // Нажатие на дельту
       for (let [index, line] of this.lines.entries()) {
+        const delta = line.main_line.delta;
+        const reverseDelta = {
+          x: delta.x + 2 * delta.len.x,
+          y: delta.y + 2 * delta.len.y,
+        };
+
         if (
-          this.comparisonCordPoints(
-            x,
-            y,
-            line.main_line.delta.x,
-            line.main_line.delta.y
-          )
+          this.comparisonCordPoints(x, y, delta.x, delta.y) ||
+          this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)
         ) {
           this.indexDeltaLine = index;
         }
       }
     },
     mouseupPoint() {
-      this.downPoint = false;
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
       this.indexDeltaLine = -1;
 
       setTimeout(() => {
-        this.$store.dispatch("changeAction", "waitAction");
+        canvas.style.zIndex = "0";
+        if (this.defineAction("movePoint") || this.defineAction("moveDelta")) {
+          this.$store.dispatch("changeAction", "waitAction");
+        }
         this.movePoint.state = false;
         this.movePoint.index = -1;
       }, 50);
     },
     mousemove(event: MouseEvent) {
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
       const x = event.offsetX;
       const y = event.offsetY;
 
       // Анимация отрисовки линии
-      if (this.$store.state.drawLine) {
+      if (this.defineAction("drawLine")) {
         animationDrawingLine(this, x, y);
       }
 
       // Сброс стилей мыши
-      if (
-        this.$store.state.action === "waitAction" ||
-        this.$store.state.action === "pointerPoint"
-      ) {
-        this.$store.dispatch("changeAction", "auto");
+      if (this.defineAction("pointerPoint")) {
+        this.$store.dispatch("changeAction", "selectedLine");
       }
 
       // Если мы навелись мышкой на точку
-      if (this.lines.length > 0 && this.pointover(x, y).indexPoint >= 0) {
+      if (
+        this.lines.length > 0 &&
+        this.pointover(x, y).indexPoint >= 0 &&
+        this.defineAction("selectedLine")
+      ) {
         this.$store.dispatch("changeAction", "pointerPoint"); // То меняем стили курсора
       }
 
       // Если мы навелись мышкой на точку дельты
       for (let line of this.lines) {
         const delta = line.main_line.delta;
-        if (this.comparisonCordPoints(x, y, delta.x, delta.y)) {
+        const reverseDelta = {
+          x: delta.x + 2 * delta.len.x,
+          y: delta.y + 2 * delta.len.y,
+        };
+
+        if (
+          (this.comparisonCordPoints(x, y, delta.x, delta.y) ||
+            this.comparisonCordPoints(x, y, reverseDelta.x, reverseDelta.y)) &&
+          this.defineAction("selectedLine")
+        ) {
           this.$store.dispatch("changeAction", "pointerPoint");
         }
       }
 
       // Перетаскивание точки
-      if (this.downPoint && !this.$store.state.drawLine) {
+      if (this.defineAction("downPoint") || this.defineAction("movePoint")) {
+        canvas.style.zIndex = "1";
         dragPoint(this, x, y);
       }
 
       // Перетаскивание дельты
-      if (this.indexDeltaLine != -1) {
+      if (this.indexDeltaLine !== -1) {
+        canvas.style.zIndex = "1";
         dragDelta(this, x, y);
       }
     },
+    endDraw() {
+      if (this.defineAction("drawLine")) {
+        const canvas = this.$refs.canvas as HTMLCanvasElement;
+        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.$store.dispatch("changeAction", "selectedLine");
+      }
+    },
+    defineAction(action: string) {
+      return this.$store.state.action === action;
+    },
+
+    // Сравнение координат двух точек
     comparisonCordPoints(x1: number, y1: number, x2: number, y2: number) {
       return !!(x1 > x2 - 15 && x1 < x2 + 15 && y1 > y2 - 15 && y1 < y2 + 15);
     },
+    // Сравнение координат мыши и точки
     pointover(mouseX: number, mouseY: number) {
       for (let [indexLine, line] of this.lines.entries()) {
         for (let [indexPoint, point] of line.main_line.points.entries()) {
@@ -275,22 +337,21 @@ export default defineComponent({
       }
       return { indexLine: -1, indexPoint: -1 };
     },
-    endDraw(event: MouseEvent) {
-      const contextMenu = this.$refs.contextMenu as HTMLElement;
-      const canvas = this.$refs.canvas as HTMLCanvasElement;
-      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      contextMenu.style.left = `${event.offsetX}px`;
-      contextMenu.style.top = `${event.offsetY}px`;
+    // Валидация поля 'количество парковочных мест'
+    validationParkingPlace() {
+      const mainLine = this.lines[this.indexSelectedLine].main_line;
+      const parkingSizeString = String(mainLine.attributes.parking_size);
+      const parkingSizeNumber = Number(parkingSizeString);
 
-      this.indexStartLine++;
-      this.visibleContextMenu = true;
-      this.$store.dispatch("endDraw");
+      if (isNaN(parkingSizeNumber) || parkingSizeNumber > 999) {
+        const newParkingSize = parkingSizeString.slice(0, -1);
+        this.lines[this.indexSelectedLine].main_line.attributes.parking_size =
+          Number(newParkingSize);
+      }
     },
-    submitData() {
-      this.visibleContextMenu = false;
-    },
+
+    // Отрисовка разметки
     render() {
       const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -303,6 +364,7 @@ export default defineComponent({
       canvasFill.height = canvasFill.offsetHeight;
 
       this.lines = this.$store.state.lines;
+      this.indexSelectedLine = this.$store.state.selectedLine;
 
       // Отрисовка всех точек и линий
       if (this.lines.length > 0) {
@@ -312,15 +374,22 @@ export default defineComponent({
         for (let line of this.lines) {
           const mainLine = line.main_line;
           const points = mainLine.points;
+          const contextMenu = this.$refs.contextMenu as HTMLElement;
+          const contextX = mainLine.points[0].x - 50;
+          const contextY = mainLine.points[0].y + 15;
 
           // Отрисовка области вокруг линии
-          renderAreaLine(ctxFill, mainLine);
+          renderAreaLine(this, ctxFill, mainLine);
 
           if (mainLine.attributes.selected) {
             // Отрисовка основных линий и точек
             renderMainLine(ctx, points);
             // Отрисовка дельты
             renderDelta(this, ctx, mainLine);
+
+            this.visibleContextMenu = true;
+            contextMenu.style.left = `${contextX}px`;
+            contextMenu.style.top = `${contextY}px`;
           }
         }
       }
@@ -348,34 +417,41 @@ export default defineComponent({
       }
     });
     addEventListener("keyup", (event: KeyboardEvent) => {
+      const { code } = event;
+      const { indexSelectedLine } = this;
+      const canvas = this.$refs.canvas as HTMLCanvasElement;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
       if (event.key === "Control") {
+        this.$store.dispatch("changeAction", "selectedLine");
+      }
+
+      if (code === "Escape") {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         this.$store.dispatch("changeAction", "waitAction");
       }
-      if (event.key === "Escape") {
-        const canvas = this.$refs.canvas as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        this.indexStartLine++;
-        this.$store.dispatch("endDraw");
-      }
-      if (event.key === "Delete") {
-        let currentLine = this.lines[this.indexStartLine].main_line;
-        if (currentLine.points.length < 1) {
-          return "Точек нет, нечего удалять"; 
-        }
+      // удаление точек
+      if (code === "Delete" && this.lines.length > 0) {
+        const currentLine = this.lines[indexSelectedLine].main_line;
+
         currentLine.points.splice(this.indexStartPoint, 1);
         this.indexStartPoint = currentLine.points.length - 1;
-        if (this.indexStartPoint === -1) {
-          this.lines.splice(this.indexStartLine, 1);
-          this.$store.dispatch("endDraw");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (currentLine.points.length < 2) {
+          this.visibleContextMenu = false;
+          this.lines.splice(indexSelectedLine, 1);
+          this.indexSelectedLine = this.lines.length - 1;
+          this.$store.dispatch("changeAction", "waitAction");
         }
       }
     });
     addEventListener("keypress", (event: KeyboardEvent) => {
+      const parkingSize = this.$refs.parkingSize as HTMLElement;
+
       if (event.key === "Enter") {
         event.preventDefault();
-        this.submitData();
+        parkingSize.blur();
       }
     });
   },
@@ -392,9 +468,21 @@ export default defineComponent({
   height: 100%;
 }
 
-form {
+.data-line {
   position: absolute;
-  padding: 1em 2em;
+  /* padding: 1em 2em;
+  background-color: #fff; */
+}
+
+.input-wrapper {
+  display: grid;
+  margin: 20px 0;
+}
+
+.parking-count--small {
+  text-align: center;
+  max-width: 40px;
+  margin-right: 10px;
   background-color: #fff;
 }
 </style>

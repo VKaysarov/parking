@@ -1,4 +1,4 @@
-function addPointOnLine(self: any, x: number, y: number) {
+function addPointOnLine(self: any, x: number, y: number): void {
   const { indexLine, indexPoint } = self.lineover(x, y);
   const points = self.lines[indexLine].main_line.points;
   const point = {
@@ -12,35 +12,29 @@ function addPointOnLine(self: any, x: number, y: number) {
 
   self.lines[indexLine].main_line.points = points;
   self.$store.dispatch("savePoint", self.lines);
-
-  return true;
 }
 
-function selectPointOnLine(self: any, x: number, y: number) {
+function selectPointOnLine(self: any, x: number, y: number): void {
   const { indexPoint, indexLine } = self.pointover(x, y);
+  const { lines } = self;
+  const currentLine = lines[indexLine].main_line;
+  const delta = currentLine.delta;
 
-  if (indexPoint != -1) {
-    const { lines } = self;
-    const currentLine = lines[indexLine].main_line;
-    const delta = currentLine.delta;
-
-    for (const point of currentLine.points) {
-      point.joinedDelta = false;
-    }
-
-    currentLine.points[indexPoint].joinedDelta = true;
-    currentLine.attributes.selected = true;
-    delta.x = x - delta.len.x;
-    delta.y = y - delta.len.y;
-
-    self.indexStartPoint = indexPoint;
-    self.indexStartLine = indexLine;
-
-    return true;
+  for (const point of currentLine.points) {
+    point.joinedDelta = false;
   }
+
+  currentLine.points[indexPoint].joinedDelta = true;
+  currentLine.attributes.selected = true;
+  delta.x = x - delta.len.x;
+  delta.y = y - delta.len.y;
+
+  self.indexStartPoint = indexPoint;
+  self.indexSelectedLine = indexLine;
+  self.$store.dispatch("changeAction", "selectedLine");
 }
 
-function drawLine(self: any, x: number, y: number) {
+function drawLine(self: any, x: number, y: number): void {
   const { lines } = self;
   const countLines = lines.length;
   const points = self.lines[countLines - 1].main_line.points;
@@ -57,4 +51,10 @@ function drawLine(self: any, x: number, y: number) {
   self.$store.dispatch("savePoint", lines);
 }
 
-export { addPointOnLine, selectPointOnLine, drawLine };
+function dischargeSelectedLine(self: any): void {
+  for (const line of self.lines) {
+    line.main_line.attributes.selected = false;
+  }
+}
+
+export { addPointOnLine, selectPointOnLine, drawLine, dischargeSelectedLine };
