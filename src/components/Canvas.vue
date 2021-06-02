@@ -146,6 +146,7 @@ export default defineComponent({
           this.$store.dispatch("changeAction", "selectedLine");
           this.$store.dispatch("selectLine", index);
           attributes.selected = true;
+
           return;
         }
       }
@@ -352,7 +353,7 @@ export default defineComponent({
     },
 
     // Отрисовка разметки
-    render() {
+    renderMarkup() {
       const canvas = this.$refs.canvasAnim as HTMLCanvasElement;
       const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       const canvasFill = this.$refs.canvasFill as HTMLCanvasElement;
@@ -394,7 +395,7 @@ export default defineComponent({
         }
       }
 
-      requestAnimationFrame(this.render);
+      requestAnimationFrame(this.renderMarkup);
     },
     renderLine(
       ctx: CanvasRenderingContext2D,
@@ -410,7 +411,7 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.render();
+    this.renderMarkup();
     addEventListener("keydown", (event: KeyboardEvent) => {
       if (event.ctrlKey) {
         this.$store.dispatch("changeAction", "addPoint");
@@ -431,8 +432,8 @@ export default defineComponent({
         this.$store.dispatch("changeAction", "waitAction");
       }
 
-      // удаление точек
-      if (code === "Delete" && this.lines.length > 0) {
+      // Удаление точек
+      if (code === "Delete" && this.defineAction("selectedLine")) {
         const currentLine = this.lines[indexSelectedLine].main_line;
 
         currentLine.points.splice(this.indexStartPoint, 1);
@@ -441,7 +442,8 @@ export default defineComponent({
         if (currentLine.points.length < 2) {
           this.visibleContextMenu = false;
           this.lines.splice(indexSelectedLine, 1);
-          this.indexSelectedLine = this.lines.length - 1;
+          this.indexSelectedLine = 0;
+          this.$store.dispatch("selectLine", 0);
           this.$store.dispatch("changeAction", "waitAction");
         }
       }

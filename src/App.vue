@@ -6,16 +6,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import ToolBar from "./components/ToolBar.vue";
-import GetImg from "./components/GetImg.vue";
+import { defineAsyncComponent, defineComponent } from "vue";
 
 export default defineComponent({
   name: "App",
 
   components: {
-    GetImg,
-    ToolBar,
+    ToolBar: defineAsyncComponent(() => import("./components/ToolBar.vue")),
+    GetImg: defineAsyncComponent(() => import("./components/GetImg.vue")),
   },
 
   data() {

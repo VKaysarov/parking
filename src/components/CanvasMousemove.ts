@@ -1,4 +1,4 @@
-function animationDrawingLine(self: any, x: number, y: number): void {
+const animationDrawingLine = (self: any, x: number, y: number): void => {
   const canvas = self.$refs.canvas as HTMLCanvasElement;
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   const lastLine = self.lines[self.lines.length - 1].main_line;
@@ -8,9 +8,9 @@ function animationDrawingLine(self: any, x: number, y: number): void {
   canvas.height = canvas.offsetHeight;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   self.renderLine(ctx, start.x, start.y, x, y);
-}
+};
 
-function dragPoint(self: any, x: number, y: number): void {
+const dragPoint = (self: any, x: number, y: number): void => {
   const { lines } = self;
   const currentLine = lines[self.movePoint.indexLine].main_line;
   const { points, attributes } = currentLine;
@@ -51,9 +51,9 @@ function dragPoint(self: any, x: number, y: number): void {
 
   lines[self.movePoint.indexLine] = line;
   self.$store.dispatch("savePoint", lines);
-}
+};
 
-function dragDelta(self: any, x: number, y: number): void {
+const dragDelta = (self: any, x: number, y: number): void => {
   const { lines } = self;
   const line = lines[self.indexDeltaLine].main_line;
   const points = line.points;
@@ -75,6 +75,6 @@ function dragDelta(self: any, x: number, y: number): void {
   line.delta = delta;
   self.$store.dispatch("savePoint", lines);
   self.$store.dispatch("changeAction", "moveDelta");
-}
+};
 
 export { animationDrawingLine, dragPoint, dragDelta };

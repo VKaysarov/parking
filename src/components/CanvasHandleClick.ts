@@ -1,4 +1,4 @@
-function addPointOnLine(self: any, x: number, y: number): void {
+const addPointOnLine = (self: any, x: number, y: number): void => {
   const { indexLine, indexPoint } = self.lineover(x, y);
   const points = self.lines[indexLine].main_line.points;
   const point = {
@@ -12,9 +12,9 @@ function addPointOnLine(self: any, x: number, y: number): void {
 
   self.lines[indexLine].main_line.points = points;
   self.$store.dispatch("savePoint", self.lines);
-}
+};
 
-function selectPointOnLine(self: any, x: number, y: number): void {
+const selectPointOnLine = (self: any, x: number, y: number): void => {
   const { indexPoint, indexLine } = self.pointover(x, y);
   const { lines } = self;
   const currentLine = lines[indexLine].main_line;
@@ -32,9 +32,9 @@ function selectPointOnLine(self: any, x: number, y: number): void {
   self.indexStartPoint = indexPoint;
   self.indexSelectedLine = indexLine;
   self.$store.dispatch("changeAction", "selectedLine");
-}
+};
 
-function drawLine(self: any, x: number, y: number): void {
+const drawLine = (self: any, x: number, y: number): void => {
   const { lines } = self;
   const countLines = lines.length;
   const points = self.lines[countLines - 1].main_line.points;
@@ -49,12 +49,12 @@ function drawLine(self: any, x: number, y: number): void {
   self.indexStartPoint++;
   self.lines[countLines - 1].main_line.points = points;
   self.$store.dispatch("savePoint", lines);
-}
+};
 
-function dischargeSelectedLine(self: any): void {
+const dischargeSelectedLine = (self: any): void => {
   for (const line of self.lines) {
     line.main_line.attributes.selected = false;
   }
-}
+};
 
 export { addPointOnLine, selectPointOnLine, drawLine, dischargeSelectedLine };

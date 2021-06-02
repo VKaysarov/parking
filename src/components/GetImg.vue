@@ -1,16 +1,19 @@
 <template>
-  <div id="canvas-wrapper" :class="classObject">
+  <div id="canvas-wrapper" :class="changeStyleCursor">
     <Canvas />
-    <img :src="imgUrl" alt="parking" class="parking-place" />
+    <!-- <img :src="imgUrl" alt="parking" class="parking-place" /> -->
+    <img
+      :src="`http://gpu3-chel1:8083/photo/${this.$store.state.imgId}`"
+      class="parking-place"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import Canvas from "./Canvas.vue";
+import { defineAsyncComponent, defineComponent } from "vue";
 export default defineComponent({
   components: {
-    Canvas,
+    Canvas: defineAsyncComponent(() => import("./Canvas.vue")),
   },
   name: "GetImg",
   data() {
@@ -19,12 +22,12 @@ export default defineComponent({
     };
   },
   async mounted() {
-    let response = await fetch("/photo/122");
+    let response = await fetch(`/photo/${this.$store.state.imgId}`);
     let blob = response.blob();
     this.imgUrl = URL.createObjectURL(await blob);
   },
   computed: {
-    classObject: function () {
+    changeStyleCursor: function () {
       return {
         addPoint: this.$store.state.action === "addPoint",
         movePoint: this.$store.state.action === "movePoint",
@@ -65,7 +68,8 @@ img {
   cursor: cell;
 }
 
-.movePoint, .moveDelta {
+.movePoint,
+.moveDelta {
   cursor: grabbing;
 }
 
