@@ -106,7 +106,7 @@ export default defineComponent({
             },
           },
           attributes: {
-            parking_size: 0,
+            parking_size: 1,
             disabled: false,
             selected: true,
             path: {} as Path2D,
@@ -153,11 +153,17 @@ export default defineComponent({
 
       // Сброс выделения разметки линии
       if (this.defineAction("selectedLine")) {
-        dischargeSelectedLine(this);
-        this.visibleContextMenu = false;
-        this.$store.dispatch("changeAction", "waitAction");
+        const parkingSize = this.lines[this.indexSelectedLine].main_line.attributes.parking_size;
+        const parkingSizeString = String(parkingSize);
+        const parkingSizeNumber = Number(parkingSizeString);
 
-        return;
+        if (parkingSizeNumber) {
+          dischargeSelectedLine(this);
+          this.visibleContextMenu = false;
+          this.$store.dispatch("changeAction", "waitAction");
+
+          return;
+        }
       }
 
       // Начало рисования основной линии
@@ -341,14 +347,24 @@ export default defineComponent({
 
     // Валидация поля 'количество парковочных мест'
     validationParkingPlace() {
-      const mainLine = this.lines[this.indexSelectedLine].main_line;
+      const { indexSelectedLine } = this;
+      const mainLine = this.lines[indexSelectedLine].main_line;
       const parkingSizeString = String(mainLine.attributes.parking_size);
       const parkingSizeNumber = Number(parkingSizeString);
+      const parkingSize = this.$refs.parkingSize as HTMLElement;
 
       if (isNaN(parkingSizeNumber) || parkingSizeNumber > 999) {
         const newParkingSize = parkingSizeString.slice(0, -1);
-        this.lines[this.indexSelectedLine].main_line.attributes.parking_size =
+        this.lines[indexSelectedLine].main_line.attributes.parking_size =
           Number(newParkingSize);
+      }
+
+      if (parkingSizeNumber === 0) {
+        parkingSize.style.outlineColor = "red";
+        parkingSize.style.borderColor = "red";
+      } else {
+        parkingSize.style.outlineColor = "#000";
+        parkingSize.style.borderColor = "#000";
       }
     },
 

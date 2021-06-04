@@ -102,12 +102,11 @@ export default defineComponent({
       const lines = this.$store.state.lines;
       const linesSubmit = [] as parkingPlacesArrayType;
       const formData = new FormData();
-      const file = new File([JSON.stringify(linesSubmit)], "file");
 
       for (let line of lines) {
         line = {
           main_line: {
-            points: [],
+            points: line.main_line.points,
             delta: {
               x: line.main_line.delta.x,
               y: line.main_line.delta.y,
@@ -120,21 +119,18 @@ export default defineComponent({
         };
 
         for (let point of line.main_line.points) {
-          point = {
-            id: point.id,
-            x: point.x,
-            y: point.y,
-          };
-          line.main_line.points.push(point);
+          delete point.joinedDelta;
         }
 
         linesSubmit.push(line);
       }
 
+      const file = new File([JSON.stringify(linesSubmit)], "file");
+
       formData.append("file", file);
 
       const response = await fetch("/marking/v2/100", {
-        method: "POST",
+        method: "PATCH",
         body: formData,
       });
       const result = await response.json();
