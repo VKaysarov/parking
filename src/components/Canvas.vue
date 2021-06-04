@@ -173,7 +173,6 @@ export default defineComponent({
         this.startDraw(event);
         return;
       }
-      this.visibleContextMenu = false;
 
       // Продолжение рисования основной линий
       if (this.defineAction("drawLine")) {
