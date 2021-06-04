@@ -153,7 +153,8 @@ export default defineComponent({
 
       // Сброс выделения разметки линии
       if (this.defineAction("selectedLine")) {
-        const parkingSize = this.lines[this.indexSelectedLine].main_line.attributes.parking_size;
+        const parkingSize =
+          this.lines[this.indexSelectedLine].main_line.attributes.parking_size;
         const parkingSizeString = String(parkingSize);
         const parkingSizeNumber = Number(parkingSizeString);
 

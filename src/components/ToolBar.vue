@@ -143,13 +143,20 @@ export default defineComponent({
       }
 
       const file = new File([JSON.stringify(linesSubmit)], "file");
+      const url = "/marking/v2/121";
 
       formData.append("file", file);
 
-      const response = await fetch("/marking/v2/100", {
-        method: "PATCH",
+      const responseGet = await fetch(url);
+
+      let method = "PATCH";
+
+      responseGet.ok ? (method = "PATCH") : (method = "POST");
+      const response = await fetch(url, {
+        method: method,
         body: formData,
       });
+
       if (response.ok) {
         const popUpTitle = this.$refs.popUpTitle as HTMLElement;
         popUpTitle.innerHTML = "Данные успешно загружены";
