@@ -46,8 +46,4 @@ input {
 .v-app-bar {
   position: static;
 }
-
-.v-layout {
-  overflow: hidden;
-}
 </style>

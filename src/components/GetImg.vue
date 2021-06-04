@@ -4,7 +4,8 @@
     <!-- <img :src="imgUrl" alt="parking" class="parking-place" /> -->
     <img
       :src="`http://gpu3-chel1:8083/photo/${this.$store.state.imgId}`"
-      class="parking-place"
+      width="1920"
+      height="1080"
     />
   </div>
 </template>
@@ -42,10 +43,13 @@ export default defineComponent({
 <style>
 img {
   user-select: none;
+  margin: 0 auto;
+  object-fit: cover;
 }
 
 #canvas-wrapper {
   position: relative;
+  display: flex;
   max-height: calc(100% - 64px);
   height: 100%;
 }

@@ -37,6 +37,7 @@
         <v-icon class="img-search__icon">mdi-magnify</v-icon>
         <input
           type="text"
+          ref="imgSearchField"
           class="img-search__field"
           v-model="imgId"
           @change="this.$store.dispatch('changeImgId', imgId)"
@@ -124,8 +125,8 @@ export default defineComponent({
           main_line: {
             points: line.main_line.points,
             delta: {
-              x: line.main_line.delta.x,
-              y: line.main_line.delta.y,
+              x: line.main_line.delta.len.x,
+              y: line.main_line.delta.len.y,
             },
             attributes: {
               parking_size: line.main_line.attributes.parking_size,
@@ -165,6 +166,14 @@ export default defineComponent({
   },
   mounted() {
     this.lines = this.$store.state.lines;
+    addEventListener("keypress", (event: KeyboardEvent) => {
+      const imgSearchField = this.$refs.imgSearchField as HTMLElement;
+
+      if (event.key === "Enter") {
+        event.preventDefault();
+        imgSearchField.blur();
+      }
+    });
   },
 });
 </script>
