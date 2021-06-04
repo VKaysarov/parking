@@ -89,7 +89,6 @@ export default defineComponent({
       submitedData: false,
       drawer: false,
       popUp: false,
-      group: null,
       imgId: 1,
     };
   },

@@ -22,7 +22,6 @@ const dragPoint = (self: any, x: number, y: number): void => {
 
   let { delta } = currentLine;
 
-  self.movePoint.state = true;
   self.$store.dispatch("changeAction", "movePoint");
 
   // Сохранение изменения координат точки

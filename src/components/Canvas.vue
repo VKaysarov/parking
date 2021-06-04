@@ -76,7 +76,6 @@ export default defineComponent({
       movePoint: {
         index: -1,
         indexLine: -1,
-        state: false,
       },
     };
   },
@@ -216,7 +215,6 @@ export default defineComponent({
         if (this.defineAction("movePoint") || this.defineAction("moveDelta")) {
           this.$store.dispatch("changeAction", "waitAction");
         }
-        this.movePoint.state = false;
         this.movePoint.index = -1;
       }, 50);
     },
