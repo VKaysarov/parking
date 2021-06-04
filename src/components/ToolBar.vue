@@ -4,10 +4,20 @@
       <v-btn color="red" class="btn-close" @click="popUp = false" icon>
         <v-icon>mdi-close</v-icon>
       </v-btn>
-      <h2 class="pop-up__title">Вы уверены что хотите <br>   отправить разметку?</h2>
+      <h2 class="pop-up__title" ref="popUpTitle">
+        Вы уверены что хотите <br />
+        отправить разметку?
+      </h2>
       <div class="wrapper-btn">
-        <v-btn @click="submitData" color="primary" x-large>Да</v-btn>
-        <v-btn @click="popUp = false" color="primary" outlined x-large>Нет</v-btn>
+        <div v-if="submitedData">
+          <v-btn @click="closePopUp" color="primary" x-large>Ок</v-btn>
+        </div>
+        <div v-else>
+          <v-btn @click="submitData" color="primary" x-large>Да</v-btn>
+          <v-btn @click="popUp = false" color="primary" outlined x-large
+            >Нет</v-btn
+          >
+        </div>
       </div>
     </div>
   </div>
@@ -76,6 +86,7 @@ export default defineComponent({
   data() {
     return {
       lines: [] as parkingPlacesArrayType,
+      submitedData: false,
       drawer: false,
       popUp: false,
       group: null,
@@ -97,6 +108,12 @@ export default defineComponent({
         return `Инвалидных ${mainLine.attributes.parking_size}`;
       }
       return `Неинвалидных ${mainLine.attributes.parking_size}`;
+    },
+    closePopUp() {
+      const popUpTitle = this.$refs.popUpTitle as HTMLElement;
+      popUpTitle.innerHTML = "Вы уверены что хотите <br /> отправить разметку?";
+      this.popUp = false;
+      this.submitedData = false;
     },
     async submitData() {
       const lines = this.$store.state.lines;
@@ -133,9 +150,11 @@ export default defineComponent({
         method: "PATCH",
         body: formData,
       });
-      const result = await response.json();
-      console.log(result);
-      this.popUp = false;
+      if (response.ok) {
+        const popUpTitle = this.$refs.popUpTitle as HTMLElement;
+        popUpTitle.innerHTML = "Данные успешно загружены";
+        this.submitedData = true;
+      }
     },
   },
   mounted() {
@@ -201,7 +220,7 @@ li > .v-card {
   justify-content: center;
 }
 
-.wrapper-btn > .v-btn {
+.wrapper-btn .v-btn {
   margin: 20px;
 }
 
@@ -230,5 +249,4 @@ li > .v-card {
   position: absolute;
   left: 5px;
 }
-
 </style>
