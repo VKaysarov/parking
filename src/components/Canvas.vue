@@ -217,7 +217,7 @@ export default defineComponent({
       setTimeout(() => {
         canvas.style.zIndex = "0";
         if (this.defineAction("movePoint") || this.defineAction("moveDelta")) {
-          this.$store.dispatch("changeAction", "waitAction");
+          this.$store.dispatch("changeAction", "selectedLine");
         }
         this.movePoint.index = -1;
       }, 50);
