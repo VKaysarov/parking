@@ -135,10 +135,10 @@ export default defineComponent({
           },
         };
 
-        for (let point of line.main_line.points) {
+        for (let [index, point] of line.main_line.points.entries()) {
+          point.id = index;
           delete point.joinedDelta;
         }
-
         linesSubmit.push(line);
       }
 

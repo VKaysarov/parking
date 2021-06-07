@@ -55,6 +55,8 @@ const dischargeSelectedLine = (self: any): void => {
   for (const line of self.lines) {
     line.main_line.attributes.selected = false;
   }
+  self.visibleContextMenu = false;
+  self.$store.dispatch("changeAction", "waitAction");
 };
 
 export { addPointOnLine, selectPointOnLine, drawLine, dischargeSelectedLine };

@@ -127,6 +127,7 @@ export default defineComponent({
       // Добавление точки на линии
       if (this.defineAction("addPoint")) {
         addPointOnLine(this, x, y);
+
         return;
       }
 
@@ -159,8 +160,6 @@ export default defineComponent({
 
         if (parkingSizeNumber) {
           dischargeSelectedLine(this);
-          this.visibleContextMenu = false;
-          this.$store.dispatch("changeAction", "waitAction");
 
           return;
         }
@@ -480,14 +479,12 @@ export default defineComponent({
 #canvasFill {
   position: absolute;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 1920px;
+  height: 1080px;
 }
 
 .data-line {
   position: absolute;
-  /* padding: 1em 2em;
-  background-color: #fff; */
 }
 
 .input-wrapper {
