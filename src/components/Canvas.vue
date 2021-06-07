@@ -138,16 +138,21 @@ export default defineComponent({
       }
 
       // Выбор линии разметки
-      for (let [index, line] of this.lines.entries()) {
-        const attributes = line.main_line.attributes;
+      if (
+        this.defineAction("selectedLine") ||
+        this.defineAction("waitAction")
+      ) {
+        for (let [index, line] of this.lines.entries()) {
+          const attributes = line.main_line.attributes;
 
-        if (ctxFill.isPointInPath(attributes.path, x, y)) {
-          dischargeSelectedLine(this);
-          this.$store.dispatch("changeAction", "selectedLine");
-          this.$store.dispatch("selectLine", index);
-          attributes.selected = true;
+          if (ctxFill.isPointInPath(attributes.path, x, y)) {
+            dischargeSelectedLine(this);
+            this.$store.dispatch("changeAction", "selectedLine");
+            this.$store.dispatch("selectLine", index);
+            attributes.selected = true;
 
-          return;
+            return;
+          }
         }
       }
 
